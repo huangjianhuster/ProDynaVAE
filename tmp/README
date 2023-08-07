@@ -1,0 +1,61 @@
+#3GB1 Protein
+Original input xtc:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_3GB1/gromacs/pro_align.xtc
+
+Original input PDB:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_3GB1/gromacs/t0.pdb
+
+Heavy atom pdb:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/trajs/3GB1/3GB1_heavy.pdb 
+
+Maps pickle file:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/results/3GB1/3GB1_maps.pkl
+
+PSF file
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_3GB1/step1_pdbreader.psf
+
+Template for Torsion angles
+"/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_3GB1/gromacs/t0_tmp.pdb"
+
+
+
+
+#1BDC Protein
+
+Original PDB file:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_1BDC/charmm-gui-8986125038/gromacs/step5_1_protein.pdb
+
+Orignal XTC file
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_1BDC/charmm-gui-8986125038/gromacs/step5_1_align.xtc
+
+Original PSF file
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_1BDC/charmm-gui-8986125038/step1_pdbreader.pdb
+
+Heavy atom PDB:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/trajs/ProA/ProA_heavy.pdb
+
+Template for Torsion angles
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_1BDC/charmm-gui-8986125038/step1_pdbreader.psf
+
+Maps pickle file:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/results/1BDC/1BDC_maps.pkl
+
+
+
+#P53 Protein
+
+Original PDB file:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/src/p53.1.pdb
+
+Original input xtc:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/src/p53.1.dcd
+
+Heavy atom PDB:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/src/P53_heavy.pdb
+
+Maps pickle file:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/results/P53/P53_maps.pkl
+
+
+
+
