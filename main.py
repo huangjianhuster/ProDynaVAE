@@ -16,6 +16,7 @@ from utils.train_and_eval import *
 import argparse
 import sys
 import os
+from tensorflow import random
 import json 
 
 def main():
@@ -28,9 +29,13 @@ def main():
     with open(args.input, 'r') as f:
         input_args = json.load(f)
 
+
+    seed = input_args['seed'] 
     data_path = input_args['datapath']
     traj = os.path.join(data_path, input_args['trj'])
     psf = os.path.join(data_path, input_args['psf'])
+    pdb = os.path.join(data_path, input_args['pdb'])
+    
     hyperparams_dict = {'BATCH_SIZE': input_args['BATCH_SIZE'], # give a 'list' type
                         'LATENT_DIM': input_args['LATENT_DIM'], #  give a 'list' type
                         'NUM_HIDDEN_LAYER': input_args['NUM_HIDDEN_LAYER'], # give a 'list' type
@@ -39,8 +44,8 @@ def main():
                         }
     hyperparams_combinations = gen_parms_combinations(**hyperparams_dict)
     print(hyperparams_combinations)
-    exit(0)
 
+    random.set_seed(seed)
     # extract protein from raw trajectory
     out_psf, out_traj = extract_pro(psf, traj)
     outtraj_basename = os.path.basename(out_traj)
@@ -51,7 +56,10 @@ def main():
     # generate input array
     Ec, bonds, angles, dihedrals, R = get_ic(out_psf, aligned_traj)
     torsion_scaler, torsion_test, torsion_train = scaling_spliting(dihedrals)
-
+    
+    # additional params
+    early_stopping = input_args['early_stopping']
+    post_analysis = input_args['post_analysis']
 
     print("HERE")
     # VAE model traning
@@ -65,6 +73,9 @@ def main():
         training_input['scaler'] = torsion_scaler
         training_input['x_train'] = torsion_train
         training_input['x_test'] = torsion_test
+        training_input['early_stopping'] = early_stopping
+        training_input['seed'] = seed
+        training_input['outtraj_dirname'] = outtraj_dirname
 
         # VAE model evaluation
         return_dict = training(**training_input)
@@ -72,16 +83,27 @@ def main():
         Summary.append(return_dict)
         # Save Dictionary
         # some plot
-    pickle.dump(summary, open("./summary.pkl", "wb"))
+    pickle.dump(Summary, open(f"{outtraj_dirname}/summary.pkl", "wb"))
 
     # generate the PDB file
-#    demap_to_PDB(Ic_bonds, Ic_angles, Ec, torsion, R)
+    if post_analysis == True:
+      
+        demap = return_dict["demap"] 
+        demap_to_PDB(bonds, angles, Ec, demap, pdb, outtraj_dirname, R)
+        PDB_to_XTC(pickle_file, pdb, outtraj_dirname)
+        #pickle_file = "pickle_file.pkl"
+        
+        # Plot RMSD, Pearsons, and Spearmann
+        Testing_analysis_plot(summary, outtraj_dirname)
+        out_xtc = f"{outtraj_dirname}/out_xtc.xtc"
+        out_psf, decoded_traj = traj_align_onfly(psf, xtc, out_xtc)
+        rmsd_matrix = traj_rmsd(psf, out_xtc)
+        c_alphas.resids, rmsf_matrix = traj_rmsf(psf, out_xtc)
+        Rgyr = traj_rg(psf, out_xtc)
+        residues, helicity_ave, sheet_ave = traj_ss(psf, out_xtc)
 
-    # Generate XTC from PDBs
-#    PDB_to_XTC(pickle_file, template_file)
-  
-
-    # plot
+       
+        Post_training_analysis_plot(rmsd, c_resids, rmsf, Rgyr, residues, helicity_ave, sheet_ave, out_path)
 
     return None
 

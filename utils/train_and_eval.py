@@ -107,7 +107,8 @@ def training(**kwargs):
  
     return_dict['demap'] = demap_rad
     return_dict['outtraj_dirname'] = outtraj_dirname
-    return_dic['hyper_together'] = f"B{BATCH_SIZE}LD{LATENT_DIM}HL{NUM_HIDDEN_LAYER}E{EPOCHS}R{RATE}"
+    all_hype = f"B{BATCH_SIZE}LD{LATENT_DIM}HL{NUM_HIDDEN_LAYER}E{EPOCHS}R{RATE}"
+    return_dict['hyper_together'] = all_hype
     return return_dict
 
 # Sampling from Latent space
