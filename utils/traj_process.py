@@ -11,6 +11,8 @@ import mdtraj as md
 import numpy as np
 import os
 
+#pip install parmed
+
 # only get the protein part of the trajectory
 def extract_pro(psf, xtc):
     # determine the directory path

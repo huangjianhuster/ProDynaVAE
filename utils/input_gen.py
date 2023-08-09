@@ -5,7 +5,8 @@
 # Dependencies
 import MDAnalysis as mda
 from MDAnalysis.analysis.bat import BAT
-
+from sklearn.preprocessing import MinMaxScaler
+import numpy as np
 
 def gen_parms_combinations(**params_dict):
     """
@@ -35,7 +36,7 @@ def gen_parms_combinations(**params_dict):
     return hyperparams_combinations
 
 def get_ic(psf, xtc):
-    u = mda.Universe(psf, dcd)
+    u = mda.Universe(psf, xtc)
     selection = u.select_atoms("protein")
 
     # BAT run
@@ -44,13 +45,13 @@ def get_ic(psf, xtc):
 
     # split EC, IC (bonds, angles and dihedrals)
     Ic = R.results.bat[:,9:]
-    Ec = R.results.bat[0,:9].reshape(1,9)
+    Ec = R.results.bat[0,:9]
 
     # split Ic to get bonds, angles and dihedrals
     bonds = R.results.bat[:, 9:len(u.atoms)-3+9]
     angles = R.results.bat[:, len(u.atoms)-3+9:(len(u.atoms)-3)*2+9]
     dihedrals = R.results.bat[:, (len(u.atoms)-3)*2+9:]
-    return Ec, bonds, angles, dihedrals
+    return Ec, bonds, angles, dihedrals, R
 
 def scaling_spliting(arr):
     """
@@ -58,7 +59,12 @@ def scaling_spliting(arr):
     return scaler, x_test, x_train
     """
     scaler = MinMaxScaler()
-    scale = scaler.fit_transform(arr)
+
+    di_sin = np.sin(arr)
+    di_cos = np.cos(arr)
+
+    maps = np.concatenate((di_sin,di_cos),axis=1)
+    scale = scaler.fit_transform(maps)
 
     # split dataset into testing and training
     x_test = scale[::4]

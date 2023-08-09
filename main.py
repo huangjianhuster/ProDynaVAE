@@ -12,55 +12,67 @@
 from utils.traj_process import *
 from utils.plot import *
 from utils.input_gen import *
+from utils.train_and_eval import *
 import sys
 
 # Global variables
 # raw_trajectory
-traj = sys.args[1]
-psf = sys.args[2]
-
+traj = sys.argv[1]
+psf = sys.argv[2]
+#out_path = "/tmp/"
+#params_json = sys.argv[3]
 
 # flags
 # flag1: generate input arrary: store as npy file format
 # flag2: model traning
 
 
-def main():
+def main(traj, psf):
     # extract protein from raw trajectory
     out_psf, out_traj = extract_pro(psf, traj)
     aligned_traj = out_traj.split('.')[0] + '_aligned.xtc'
     traj_align_onfly(out_psf, out_traj, aligned_traj)
 
     # generate input array
-    Ec, bonds, angles, dihedrals = get_ic(out_psf, aligned_traj)
+    Ec, bonds, angles, dihedrals, R = get_ic(out_psf, aligned_traj)
     torsion_scaler, torsion_test, torsion_train = scaling_spliting(dihedrals)
 
 
     # define hyperparameter grid for searching
     params_dict = {
-            'BATCH_SIZE': 
-            'LATENT_DIM': 
-            'NUM_HIDDEN_LAYER':
-            'EPOCHS':
-            'RATE':
+            'BATCH_SIZE': 64,
+            'LATENT_DIM': 2,
+            'NUM_HIDDEN_LAYER': 4,
+            'EPOCHS': 5,
+            'RATE': 0.001,
+            'scaler': torsion_scaler,
+            'x_train': torsion_train,
+            'x_test': torsion_test
             }
     hyperparams_combinations = gen_parms_combinations(**params_dict)
 
-
+    print("HERE")
     # VAE model traning
     # some functions here
+    Summary = []
     for hyperparams_dict in hyperparams_combinations:
-        training(**hyperparams_dict)
+        print("here")
+        # VAE model evaluation
+        return_dict = training(**hyperparams_dict)
+        # dict to store RMSD and correlation;
+        Summary.append(return_dict)
+        # Save Dictionary
         # some plot
+    pickle.dump(summary, open("./summary.pkl", "wb"))
 
-    # VAE model evaluation
-    # dict to store RMSD and correlation;
     # generate the PDB file
+#    demap_to_PDB(Ic_bonds, Ic_angles, Ec, torsion, R)
 
-    # integrate all PDB files into a xtc
-    
+    # Generate XTC from PDBs
+#    PDB_to_XTC(pickle_file, template_file)
+  
 
     # plot
 
-    pass
+    return None
 
