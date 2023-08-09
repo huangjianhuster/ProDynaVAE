@@ -10,9 +10,14 @@
 import json
 
 input_json = {}
-input_json['trj'] = "pro_align.xtc"
+input_json['trj'] = "prod_step_5.xtc"
 input_json['psf'] = "step3_input.psf"
-input_json['datapath'] = "../tmp/"
+input_json['pdb'] = "step3_input.pdb"
+input_json['datapath'] = "tmp/" # better to give an absolute path
+input_json['early_stopping'] = True
+input_json['seed'] = 30
+input_json['post_analysis'] = True
+
 # the following arguments have to be list type
 input_json['BATCH_SIZE'] = [100, ]
 input_json['LATENT_DIM'] = [2, ]
