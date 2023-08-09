@@ -15,19 +15,22 @@ import os
 
 # only get the protein part of the trajectory
 def extract_pro(psf, xtc):
-    # determine the directory path
-    # os.path.dirname()
+    # determine the output file path
+    dirname = os.path.dirname(xtc)
+    basename = os.path.basename(xtc)
+
+    # extract
     u = mda.Universe(psf, xtc)
     protein = u.select_atoms('protein')
     protein_psf = protein.convert_to("PARMED")
-    out_psf = psf.split('.')[0] + '_protein.psf'
-    out_xtc = xtc.split('.')[0] + '_protein.xtc'
+    out_psf = os.path.join(dirname, basename.split('.')[0] + '_protein.psf')
+    out_xtc = os.path.join(dirname, basename.split('.')[0] + '_protein.xtc')
     protein_psf.save(out_psf)
 
     with mda.Writer(out_xtc, protein.n_atoms) as W:
         for ts in u.trajectory:
             W.write(protein)
-
+    # return absolute path
     return out_psf, out_xtc
 
 # protein centering and alignment
