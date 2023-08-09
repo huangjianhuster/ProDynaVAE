@@ -7,16 +7,19 @@ import MDAnalysis as mda
 from MDAnalysis.analysis.bat import BAT
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
+import itertools
 
 def gen_parms_combinations(**params_dict):
     """
     params_dit: searching grid for each hyperparameter
-    it has to contain the following keys:
-    BATCH_SIZE: [64,]
-    LATENT_DIM: [2, 5, 10]
-    NUM_HIDDEN_LAYER: [3, 4, 5]
-    EPOCHS: [100, 200, 500]
-    RATE: [0.001, 0.01, 0.0001]
+        it has to contain the following keys:
+        BATCH_SIZE: [64,]
+        LATENT_DIM: [2, 5, 10]
+        NUM_HIDDEN_LAYER: [3, 4, 5]
+        EPOCHS: [100, 200, 500]
+        RATE: [0.001, 0.01, 0.0001]
+    return hyperparams_combinations
+        <-- list of hyperparameter dict with BATCH_SIZE LATENT_DIM NUM_HIDDEN_LAYER EPOCHS RATE as the keys
     """
     hyperparams_list = [
                   params_dict['BATCH_SIZE'],
@@ -32,7 +35,7 @@ def gen_parms_combinations(**params_dict):
         dict_tmp = {}
         dict_tmp['BATCH_SIZE'], dict_tmp['LATENT_DIM'], dict_tmp['NUM_HIDDEN_LAYER'], dict_tmp['EPOCHS'], dict_tmp['RATE']= i
 
-        hyperparams_combinations.append(i)
+        hyperparams_combinations.append(dict_tmp)
     return hyperparams_combinations
 
 def get_ic(psf, xtc):

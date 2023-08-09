@@ -1,0 +1,20 @@
+{
+    "trj": "pro_align.xtc",
+    "psf": "step3_input.psf",
+    "datapath": "../tmp/",
+    "BATCH_SIZE": [
+        100
+    ],
+    "LATENT_DIM": [
+        2
+    ],
+    "NUM_HIDDEN_LAYER": [
+        4
+    ],
+    "EPOCHS": [
+        200
+    ],
+    "RATE": [
+        0.0001
+    ]
+}

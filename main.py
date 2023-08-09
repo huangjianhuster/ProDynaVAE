@@ -18,14 +18,9 @@ import sys
 import os
 import json 
 
-def main(traj, psf):
-
+def main():
     # parse user-defined variables
     parser = argparse.ArgumentParser(description="VAE model for protein dynamics", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    # parser.add_argument("--trj", help="raw traj file (format: xtc or dcd)", required=True)
-    # parser.add_argument("--psf", help="psf file that is consistent with the providing xtc (format: psf)", required=True)
-    # parser.add_argument("--datapath", help="datafile path for trajectory, psf and VAE output (format: str)", required=True)
-    # parser.add_argument("--hyperparams", help="hyperparameter search or a given hyperparams set (format: json)", required=True)
     parser.add_argument("--input", help="input json (format: json)", required=True)
     args = parser.parse_args()
     
@@ -42,6 +37,9 @@ def main(traj, psf):
                         'EPOCHS': input_args['EPOCHS'], # give a 'list' type
                         'RATE': input_args['RATE'], # give a 'list' type
                         }
+    hyperparams_combinations = gen_parms_combinations(**hyperparams_dict)
+    print(hyperparams_combinations)
+    exit(0)
 
     # extract protein from raw trajectory
     out_psf, out_traj = extract_pro(psf, traj)
@@ -54,8 +52,6 @@ def main(traj, psf):
     Ec, bonds, angles, dihedrals, R = get_ic(out_psf, aligned_traj)
     torsion_scaler, torsion_test, torsion_train = scaling_spliting(dihedrals)
 
-    # define hyperparameter grid for searching
-    hyperparams_combinations = gen_parms_combinations(**hyperparams_dict)
 
     print("HERE")
     # VAE model traning
