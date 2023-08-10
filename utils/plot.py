@@ -35,7 +35,7 @@ def latent_space_plot(encoded, save_path):
 # losses plot
 
 # summarize history for loss
-def train_test_loss_plot(history, out_path):
+def train_test_loss_plot(history, out_path,all_hype):
     """
     History of the model it will have loss, val_loss and other metric
     Plotting between the loss/val loss and epoch
@@ -49,7 +49,7 @@ def train_test_loss_plot(history, out_path):
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
-    plt.savefig(f'{out_path}/loss.png')
+    plt.savefig(f'{out_path}/{all_hype}_loss.png')
 #    plt.show()
     return None
 # All loss plot at once
