@@ -90,11 +90,13 @@ def main():
       
         demap = return_dict["demap"] 
         demap_to_PDB(bonds, angles, Ec, demap, pdb, outtraj_dirname, R)
-        PDB_to_XTC(pickle_file, pdb, outtraj_dirname)
-        #pickle_file = "pickle_file.pkl"
+
+        pickle_file = f"{outtraj_dirname}/pickle_file.pkl"
+        PDB_to_XTC(pickle_file, pdb, outtraj_dirname)       
         
         # Plot RMSD, Pearsons, and Spearmann
         Testing_analysis_plot(summary, outtraj_dirname)
+
         out_xtc = f"{outtraj_dirname}/out_xtc.xtc"
         out_psf, decoded_traj = traj_align_onfly(psf, xtc, out_xtc)
         rmsd_matrix = traj_rmsd(psf, out_xtc)
