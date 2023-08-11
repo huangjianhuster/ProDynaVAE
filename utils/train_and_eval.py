@@ -74,8 +74,9 @@ def training(**kwargs):
                 validation_data=(x_test, x_test),
                 callbacks=[early_stopping, tensorboard_callback])
 
+    all_hype = f"B{BATCH_SIZE}LD{LATENT_DIM}HL{NUM_HIDDEN_LAYER}E{EPOCHS}R{RATE}"
     # Plot losses
-    plot1 = train_test_loss_plot(history, outtraj_dirname)
+    plot1 = train_test_loss_plot(history, outtraj_dirname, all_hype)
     # TEST 
     encoded = encoder.predict(x_test, batch_size=BATCH_SIZE)
     decoded = decoder.predict(encoded[0])
@@ -107,7 +108,7 @@ def training(**kwargs):
  
     return_dict['demap'] = demap_rad
     return_dict['outtraj_dirname'] = outtraj_dirname
-    all_hype = f"B{BATCH_SIZE}LD{LATENT_DIM}HL{NUM_HIDDEN_LAYER}E{EPOCHS}R{RATE}"
+    
     return_dict['hyper_together'] = all_hype
     return return_dict
 
@@ -137,8 +138,8 @@ def cal_rmsd(data_original, data_decoded):
     return mean RMSD and standard deviation 
     """
     data_decoded = data_decoded
-    a = np.sum(np.square(data_decoded*10 - data_original*10), axis=1)
-    rmsd = np.sqrt(a / (data_original.shape[1] // 3))
+    a = np.sum(np.square(data_decoded - data_original), axis=1)
+    rmsd = np.sqrt(a / (data_original.shape[1]))
     return np.mean(rmsd), np.std(rmsd)
 
 def demap_to_PDB(Ic_bonds, Ic_angles, Ec, torsion,pdb_temp, outtraj_dirname,R):

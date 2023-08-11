@@ -22,6 +22,43 @@ def Ramachandran_plot(psf, xtc, out_path):
 
     return None    
 
+def phi_plot(dihs, save_path):
+
+    arr_test = dihs
+    ave = arr_test.mean(axis=0)
+    std = arr_test.std(axis=0)
+    labels = np.arange(2, len(protein.residues)+1, 1)
+
+    fig, ax = plt.subplots(figsize=(16,8))
+    plt.grid(True)
+    ax.plot(labels, ave, lw=2,linestyle="--", c='firebrick')
+    ax.errorbar(labels, ave, yerr=std, fmt ='o', lw=2, c='darkblue')
+    plt.xticks(range(min(labels), max(labels)+1),fontsize=10)
+    plt.ylabel(u"$\u03C6$ (in \N{DEGREE SIGN})", fontsize=14)
+    plt.xlabel("Residue", fontsize=14)
+    fig.subplots_adjust(bottom=0.5)
+    plt.savefig(f"{save_path}/phi.png")
+    plt.show()
+    return None
+
+def psi_plot(dihs, save_path):
+    
+    arr_test = dihs
+    ave = arr_test.mean(axis=0)
+    std = arr_test.std(axis=0)
+    labels = np.arange(2, len(protein.residues)+1, 1)
+
+    fig, ax = plt.subplots(figsize=(16,8))
+    plt.grid(True)
+    ax.plot(labels, ave, lw=2,linestyle="--", c='firebrick')
+    ax.errorbar(labels, ave, yerr=std, fmt ='o', lw=2, c='darkblue')
+    plt.xticks(range(min(labels), max(labels)+1),fontsize=10)
+    plt.ylabel(u"$\u03C8$ (in \N{DEGREE SIGN})", fontsize=14)
+    plt.xlabel("Residue", fontsize=14)
+    fig.subplots_adjust(bottom=0.5)
+    plt.savefig(f"{save_path}/psi.png")
+    plt.show()
+    return None
 
 # Latent space
 

@@ -68,17 +68,19 @@ def get_bbtorsion(psf, xtc):
 
     u = mda.Universe(psf, xtc)
     protein = u.select_atoms("protein")
-    bb_torsion = []
-    phis = [res.phi_selection() for res in protein.residues[:]]
-    psis = [res.psi_selection() for res in protein.residues[:]]
+    
+    phis = [res.phi_selection() for res in protein.residues[1:]]
+    psis = [res.psi_selection() for res in protein.residues[:-1]]
     phis_traj = dihedrals.Dihedral(phis).run()
     psis_traj = dihedrals.Dihedral(psis).run()
-    
-    shape = (phis_traj.shape[0], phis_traj.shape[1] + psis_traj.shape[1])
-    bb_torsion = np.empty(shape)
-    bb_torsion[:, ::2] = phis_traj
-    bb_torsion[:, 1::2] = psis_traj
-    return bb_torsion
+
+    diher = np.concatenate((phis_traj.angles,psis_traj.angles),axis=1)
+    bbtorsion = diher*(np.pi/180)   
+#    shape = (phis_traj.shape[0], phis_traj.shape[1] + psis_traj.shape[1])
+#    bb_torsion = np.empty(shape)
+#    bb_torsion[:, ::2] = phis_traj
+#    bb_torsion[:, 1::2] = psis_traj
+    return bbtorsion
 
 def scaling_spliting(arr):
     """
