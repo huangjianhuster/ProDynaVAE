@@ -172,6 +172,12 @@ def traj_pca(psf, xtc):
     pass
 
 
+# Torison angles
+def traj_torsion(psf, xtc):
+
+    return bb_torsion
+    pass
+
 
 # write pdbs into trajectory <-- for VAE decoder-generated trajectory
 def pdbs2xtc(pdblist, out_xtc):

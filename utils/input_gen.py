@@ -5,6 +5,7 @@
 # Dependencies
 import MDAnalysis as mda
 from MDAnalysis.analysis.bat import BAT
+from MDAnalysis.analysis import dihedrals
 from sklearn.preprocessing import MinMaxScaler
 import numpy as np
 import itertools
@@ -55,6 +56,29 @@ def get_ic(psf, xtc):
     angles = R.results.bat[:, len(u.atoms)-3+9:(len(u.atoms)-3)*2+9]
     dihedrals = R.results.bat[:, (len(u.atoms)-3)*2+9:]
     return Ec, bonds, angles, dihedrals, R
+
+# https://userguide.mdanalysis.org/1.1.1/examples/analysis/structure/dihedrals.html
+def get_bbtorsion(psf, xtc):
+    """
+    bb_torsion: 2d arrary with a shape of (n_frames, 2*n_atomgroups)
+        <-- atomgroups == resude numbers
+        for each row:
+            torsions are organized as: res1_phi, res1_psi, res2_phi, res2_psi ...
+    """
+
+    u = mda.Universe(psf, xtc)
+    protein = u.select_atoms("protein")
+    bb_torsion = []
+    phis = [res.phi_selection() for res in protein.residues[:]]
+    psis = [res.psi_selection() for res in protein.residues[:]]
+    phis_traj = dihedrals.Dihedral(phis).run()
+    psis_traj = dihedrals.Dihedral(psis).run()
+    
+    shape = (phis_traj.shape[0], phis_traj.shape[1] + psis_traj.shape[1])
+    bb_torsion = np.empty(shape)
+    bb_torsion[:, ::2] = phis_traj
+    bb_torsion[:, 1::2] = psis_traj
+    return bb_torsion
 
 def scaling_spliting(arr):
     """
