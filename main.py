@@ -54,9 +54,19 @@ def main():
     traj_align_onfly(out_psf, out_traj, aligned_traj)
 
     # generate input array
-    Ec, bonds, angles, dihedrals, R = get_ic(out_psf, aligned_traj)
-    torsion_scaler, torsion_test, torsion_train = scaling_spliting(dihedrals)
+    if input_args['dihedral'] == "all":
     
+        Ec, bonds, angles, dihedrals, R = get_ic(out_psf, aligned_traj)
+        
+
+    elif input_args['dihedral'] == "backbone":
+
+        dihedrals = get_backbone_dihedreals(psf, xtc)
+        Ramachandran_plot(psf, xtc, outtraj_dirname)
+        
+    # Spliting
+    torsion_scaler, torsion_test, torsion_train = scaling_spliting(dihedrals)
+
     # additional params
     early_stopping = input_args['early_stopping']
     post_analysis = input_args['post_analysis']

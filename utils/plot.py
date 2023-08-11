@@ -4,6 +4,26 @@
 
 # Dependencies
 import matplotlib.pyplot as plt
+import MDAnalysis as mda
+from MDAnalysis.analysis import dihedrals
+
+# Pre-Training Analysis
+
+def Ramachandran_plot(psf, xtc, out_path):
+
+    u = mda.Universe(psf, xtc)
+    protein = u.select_atoms('protein')
+
+    plt.cla()
+    plt.clf()
+    rama = dihedrals.Ramachandran(protein).run()
+    rama.plot(color='black', marker='.', ref=True,s=5)
+    plt.savefig(f"{out_path}/ramachandran.png")
+
+    return None    
+
+
+# Latent space
 
 def latent_space_plot(encoded, save_path):
     # Latent_encoded
