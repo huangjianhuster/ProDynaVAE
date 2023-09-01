@@ -10,20 +10,21 @@
 import json
 
 input_json = {}
-input_json['trj'] = "prod_step_5.xtc"
-input_json['psf'] = "step3_input.psf"
-input_json['pdb'] = "step3_input.pdb"
-input_json['datapath'] = "tmp/" # better to give an absolute path
+input_json['trj'] = "/home/shrishti/Documents/Projects/IDP_ensemble/ProDynaVAE/ProDynaVAE/ProG_200K/prod_step.xtc"
+input_json['psf'] = "/home/shrishti/Documents/Projects/IDP_ensemble/ProDynaVAE/ProDynaVAE/ProG_200K/step3_input.psf"
+input_json['pdb'] = "/home/shrishti/Documents/Projects/IDP_ensemble/ProDynaVAE/ProDynaVAE/ProG_200K/step3_input.pdb"
+input_json['datapath'] = "ProG_200K/" # better to give an absolute path
 input_json['early_stopping'] = True
-input_json['seed'] = 30
-input_json['post_analysis'] = True
+input_json['seed'] = 4
+input_json['post_analysis'] = True #If want to plot and calculate other things
+input_json['input_type'] = "cartesian" # Other option is "all"
 
 # the following arguments have to be list type
-input_json['BATCH_SIZE'] = [100, ]
-input_json['LATENT_DIM'] = [2, ]
-input_json['NUM_HIDDEN_LAYER'] = [4, ]
-input_json['EPOCHS'] = [200, ]
-input_json['RATE'] = [0.0001,]
+input_json['BATCH_SIZE'] = [100 ]
+input_json['LATENT_DIM'] = [4]
+input_json['NUM_HIDDEN_LAYER'] = [4]
+input_json['EPOCHS'] = [10000 ]
+input_json['RATE'] = [0.0005]
 
 json_object = json.dumps(input_json, indent=4)
 with open("../json/sample.json", "w") as outfile:

@@ -4,6 +4,7 @@
 
 # Dependencies
 import MDAnalysis as mda
+from sklearn.model_selection import train_test_split
 from MDAnalysis.analysis.bat import BAT
 from MDAnalysis.analysis import dihedrals
 from sklearn.preprocessing import MinMaxScaler
@@ -57,6 +58,20 @@ def get_ic(psf, xtc):
     dihedrals = R.results.bat[:, (len(u.atoms)-3)*2+9:]
     return Ec, bonds, angles, dihedrals, R
 
+def get_xyz(psf, xtc):
+    u = mda.Universe(psf, xtc)
+    print('u')
+    heavy_atoms = u.select_atoms('not name H*')
+    print("heavy")
+    xyz = []
+    for ts in u.trajectory:
+        xyz.append(heavy_atoms.positions)
+    print("list")
+    xyz_array = np.array(xyz)
+    print("array")
+    return xyz_array
+
+
 # https://userguide.mdanalysis.org/1.1.1/examples/analysis/structure/dihedrals.html
 def get_bbtorsion(psf, xtc):
     """
@@ -74,21 +89,20 @@ def get_bbtorsion(psf, xtc):
     phis_traj = dihedrals.Dihedral(phis).run()
     psis_traj = dihedrals.Dihedral(psis).run()
 
-    diher = np.concatenate((phis_traj.angles,psis_traj.angles),axis=1)
-    bbtorsion = diher*(np.pi/180)   
+#    diher = np.concatenate((phis_traj.angles,psis_traj.angles),axis=1)
+#    bbtorsion = diher*(np.pi/180)   
 #    shape = (phis_traj.shape[0], phis_traj.shape[1] + psis_traj.shape[1])
 #    bb_torsion = np.empty(shape)
 #    bb_torsion[:, ::2] = phis_traj
 #    bb_torsion[:, 1::2] = psis_traj
-    return bbtorsion
+    return phis_traj.angles, psis_traj.angles
 
-def scaling_spliting(arr):
+def scaling_spliting_dihedrals(arr):
     """
     arr: the input array
     return scaler, x_test, x_train
     """
     scaler = MinMaxScaler()
-
     di_sin = np.sin(arr)
     di_cos = np.cos(arr)
 
@@ -96,8 +110,20 @@ def scaling_spliting(arr):
     scale = scaler.fit_transform(maps)
 
     # split dataset into testing and training
-    x_test = scale[::4]
-    x_train = np.delete(scale, list(range(0, scale.shape[0], 4)), axis=0)
+    x_train, x_t, y_train, y_t = train_test_split(maps_scale, scale, test_size=0.7, random_state=42)
+    x_val, x_test, y_val, y_test = train_test_split(x_t, y_t, test_size=0.5, random_state=42)
+    #x_test = scale[::4]
+    #x_train = np.delete(scale, list(range(0, scale.shape[0], 4)), axis=0)
+    return scaler, x_test, x_train, x_val
 
-    return scaler, x_test, x_train
-
+def scaling_spliting_cartesian(mps):
+    maps = mps.reshape(mps.shape[0], -1)
+    scaler = MinMaxScaler()
+    scale = scaler.fit_transform(maps)
+    print(scale)
+    # split dataset into testing and training
+    x_t, x_train, yt, yt = train_test_split(scale, scale, test_size=0.7, random_state=42)
+    print("1")
+    x_val, x_test, yt ,yt  = train_test_split(x_t, x_t, test_size=0.5, random_state=42)
+    print("2")
+    return scaler, x_test, x_train, x_val

@@ -13,11 +13,13 @@ from utils.traj_process import *
 from utils.plot import *
 from utils.input_gen import *
 from utils.train_and_eval import *
+from utils.post_analysis import *
 import argparse
 import sys
 import os
 from tensorflow import random
 import json 
+
 
 def main():
     # parse user-defined variables
@@ -51,38 +53,49 @@ def main():
     outtraj_basename = os.path.basename(out_traj)
     outtraj_dirname = os.path.dirname(out_traj)
     aligned_traj = os.path.join(outtraj_dirname , outtraj_basename.split('.')[0] + '_aligned.xtc')
-    traj_align_onfly(out_psf, out_traj, aligned_traj)
+    if os.path.isfile(aligned_traj) == False:
+        traj_align_onfly(out_psf, out_traj, aligned_traj)
 
     # generate input array
-    if input_args['dihedral'] == "all":
-    
+    if input_args['input_type'] == "dihedral_all":
         Ec, bonds, angles, dihedrals, R = get_ic(out_psf, aligned_traj)
+        scaler, test, train, val = scaling_spliting_dihedrals(dihedrals)
         
+    elif input_args['input_type'] == "dihedral_backbone":
+        original = "original"
+        phi, psi = get_bbtorsion(psf, traj)
+        dihedrals = np.concatenate((phi,psi),axis=1)
+        dihedrals = dihedrals*(np.pi/180)
+        Ramachandran_plot_trj(psf, traj, outtraj_dirname)
+        scaler, test, train, val = scaling_spliting_dihedrals(dihedrals)
+#        phi_plot(phi, outtraj_dirname, original)
+#        psi_plot(psi, outtraj_dirname, original)
 
-    elif input_args['dihedral'] == "backbone":
+    elif input_args['input_type'] == "cartesian":
+        print("deal with cartesian coordinates")
+        coordinates = get_xyz(psf, traj)
+        print(coordinates)
+        scaler, test, train, val = scaling_spliting_cartesian(coordinates)
+        print("scaler")
 
-        dihedrals = get_backbone_dihedreals(psf, xtc)
-        Ramachandran_plot(psf, xtc, outtraj_dirname)
-        
-    # Spliting
-    torsion_scaler, torsion_test, torsion_train = scaling_spliting(dihedrals)
+    elif input_args['input_type'] == "contact_map":
+        contact_map = get_contact_map(psf, traj)
+        scaler, test, train, val = scaling_spliting_contact_map(contact_map)
 
     # additional params
     early_stopping = input_args['early_stopping']
     post_analysis = input_args['post_analysis']
 
-    print("HERE")
     # VAE model traning
-    # some functions here
     Summary = []
     for hyperparams_dict in hyperparams_combinations:
-        print("here")
 
         # create train input parameters dict
         training_input = hyperparams_dict.copy()
-        training_input['scaler'] = torsion_scaler
-        training_input['x_train'] = torsion_train
-        training_input['x_test'] = torsion_test
+        training_input['scaler'] = scaler
+        training_input['x_train'] = train
+        training_input['x_test'] = test
+        training_input['x_val'] = val
         training_input['early_stopping'] = early_stopping
         training_input['seed'] = seed
         training_input['outtraj_dirname'] = outtraj_dirname
@@ -91,33 +104,15 @@ def main():
         return_dict = training(**training_input)
         # dict to store RMSD and correlation;
         Summary.append(return_dict)
-        # Save Dictionary
-        # some plot
+
+    # Save Dictionary
     pickle.dump(Summary, open(f"{outtraj_dirname}/summary.pkl", "wb"))
 
-    # generate the PDB file
+    # generate the PDB file and further analysis
     if post_analysis == True:
-      
-        demap = return_dict["demap"] 
-        demap_to_PDB(bonds, angles, Ec, demap, pdb, outtraj_dirname, R)
-
-        pickle_file = f"{outtraj_dirname}/pickle_file.pkl"
-        PDB_to_XTC(pickle_file, pdb, outtraj_dirname)       
-        
-        # Plot RMSD, Pearsons, and Spearmann
-        Testing_analysis_plot(summary, outtraj_dirname)
-
-        out_xtc = f"{outtraj_dirname}/out_xtc.xtc"
-        out_psf, decoded_traj = traj_align_onfly(psf, xtc, out_xtc)
-        rmsd_matrix = traj_rmsd(psf, out_xtc)
-        c_alphas.resids, rmsf_matrix = traj_rmsf(psf, out_xtc)
-        Rgyr = traj_rg(psf, out_xtc)
-        residues, helicity_ave, sheet_ave = traj_ss(psf, out_xtc)
-
-       
-        Post_training_analysis_plot(rmsd, c_resids, rmsf, Rgyr, residues, helicity_ave, sheet_ave, out_path)
+        # original trajectory analysis 
+        post_analysis(summary, input_args['input_type'],psf, xtc, outtraj_dirname, R, template_file)
 
     return None
-
 
 main()

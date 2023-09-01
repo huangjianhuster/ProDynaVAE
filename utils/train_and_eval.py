@@ -39,6 +39,7 @@ def training(**kwargs):
     random.set_seed(seed)
     scaler = kwargs['scaler']
     x_test = kwargs['x_test']
+    x_val = kwargs['x_val']
     x_train = kwargs['x_train']
     original_dim = x_train.shape[1]
 
@@ -59,11 +60,11 @@ def training(**kwargs):
     tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
  
     if "early_stopping" == False:
-
         history = vae.fit(x=x_train, y=x_train,
                 shuffle=True,
                 epochs=EPOCHS,
-                validation_data=(x_test, x_test),
+                validation_data=(x_val, x_val),
+                verbose=2,
                 callbacks = [tensorboard_callback])
     else:
         # If you want early stopping:
@@ -71,7 +72,8 @@ def training(**kwargs):
         history = vae.fit(x=x_train, y=x_train,
                 shuffle=True,
                 epochs=EPOCHS,
-                validation_data=(x_test, x_test),
+                validation_data=(x_val, x_val),
+                verbose=2,
                 callbacks=[early_stopping, tensorboard_callback])
 
     all_hype = f"B{BATCH_SIZE}LD{LATENT_DIM}HL{NUM_HIDDEN_LAYER}E{EPOCHS}R{RATE}"
@@ -81,11 +83,6 @@ def training(**kwargs):
     encoded = encoder.predict(x_test, batch_size=BATCH_SIZE)
     decoded = decoder.predict(encoded[0])
     demap =  scaler.inverse_transform(decoded)     
-    # Convert back
-    sin_demap = demap[:,:int(len(demap[0])/2)]
-    cos_demap = demap[:,int(len(demap[0])/2):]
-
-    demap_rad = np.arctan2(sin_demap, cos_demap)
 
     # Plot here
     #latent_space_plot(encoded, save_path)
@@ -104,9 +101,11 @@ def training(**kwargs):
 
     return_dict['Spearmann'] = Spearmann
     return_dict['Pearson'] = Pearson 
+    return_dit['pv_spearman'] = pv_spearman
+    return_dit['pv_pearson'] = pv_pearson
     return_dict['RMSD'] = RMSD
  
-    return_dict['demap'] = demap_rad
+    return_dict['demap'] = demap
     return_dict['outtraj_dirname'] = outtraj_dirname
     
     return_dict['hyper_together'] = all_hype
@@ -115,20 +114,18 @@ def training(**kwargs):
 # Sampling from Latent space
 #def sample_latent():
 
-
-
 def evaluate(encoded, demap, x_test, scaler):
-    Spearmann, Pearson = cal_spearman(x_test, encoded[0])
+    Spearmann, Pearson, pv_spearman, pv_pearson = cal_spearman(x_test, encoded[0])
     RMSD = cal_rmsd(x_test, demap)
-    return Spearmann, Pearson, RMSD
+    return Spearmann, Pearson, pv_spearman, pv_pearson, RMSD
 
 # Spearmann correlation and Pearson correlation
 def cal_spearman(data_original, data_encoded):
     dist_encoded = np.square(euclidean_distances(data_encoded, data_encoded)).flatten()
     dist_original = np.square(euclidean_distances(data_original, data_original)).flatten()
-    spearman = spearmanr(dist_original, dist_encoded)
-    pearson = pearsonr(dist_original, dist_encoded)
-    return spearman, pearson
+    spearman, pv_spearman = spearmanr(dist_original, dist_encoded)
+    pearson, pv_pearson = pearsonr(dist_original, dist_encoded)
+    return spearman, pearson, pv_spearman, pv_pearson
 
 # RMSD in A
 def cal_rmsd(data_original, data_decoded):
@@ -142,8 +139,11 @@ def cal_rmsd(data_original, data_decoded):
     rmsd = np.sqrt(a / (data_original.shape[1]))
     return np.mean(rmsd), np.std(rmsd)
 
-def demap_to_PDB(Ic_bonds, Ic_angles, Ec, torsion,pdb_temp, outtraj_dirname,R):
+def dihedral_demap_to_PDB(Ic_bonds, Ic_angles, Ec, torsion,pdb_temp, outtraj_dirname,R):
     Ic_bonds_angles_ave = np.average(np.concatenate([Ic_bonds, Ic_angles], axis=1), axis=0)
+    new_fold = f"{outtraj_dirname}/pdb"
+    path = os.path.join(outtraj_dirname,"pdb")
+    os.mkdir(path)
     i = 0
     file = []
     for tors in torsion:
@@ -156,21 +156,38 @@ def demap_to_PDB(Ic_bonds, Ic_angles, Ec, torsion,pdb_temp, outtraj_dirname,R):
         # Write into PDB
         template = extract_template(pdb_temp)
         coorinates = load_coor(new_xyz,template)
-        write_file(f"{outtraj_dirname}/pdb/{i}.pdb",coorinates)
+        write_file(f"{new_fold}/{i}.pdb",coorinates)
         file.append(f"{i}.pdb")
         i += 1  
-    with open(f"{outtraj_dirname}/pdb/pickle_file.pkl", 'wb') as w:
+    with open(f"{new_fold}/pickle_file.pkl", 'wb') as w:
         pickle.dump(file, w)
-    return None
+    pick_file = f"{new_fold}/pickle_file.pkl"
+    return pick_file, new_fold
+
+def cartesian_demap_to_PDB(demap, outtraj_dirname):
+    new_fold = f"{outtraj_dirname}/pdb"
+    path = os.path.join(outtraj_dirname,"pdb")
+    os.mkdir(path)
+    for x in demap:
+        template = extract_template(pdb_temp)
+        coorinates = load_coor( x,template)
+        write_file(f"{new_fold}/{i}.pdb",coorinates)
+        file.append(f"{i}.pdb")
+        i += 1
+    with open(f"{new_fold}/pickle_file.pkl", 'wb') as w:
+        pickle.dump(file, w)
+    pick_file = f"{new_fold}/pickle_file.pkl"
+    return pick_file, new_fold
 
 def PDB_to_XTC(pickle_file, template_file, output_xtc):
     """
-    
+        Mutiple PDB to XTC conveter 
     """
-    pdb_file = pickle.load(open(f"{output_xtc}/pdb/pickle_file.pkl",'rb'))
+    pdb_file = pickle.load(open(f"{pickle_file}",'rb'))
     reformat_pdbfiles = [(i) for i in pdb_file]
     u = mda.Universe(f"{template_file}")
-    with mda.Writer(f"{output_xtc}/pdb/output_xtc.xtc", len(u.atoms)) as xtc_writer:
+  
+    with mda.Writer(f"{output_xtc}/output_xtc.xtc", len(u.atoms)) as xtc_writer:
         for pdb_file1 in reformat_pdbfiles[0:]:
                 u.load_new(pdb_file1)  # Load each PDB file into the Universe
                 xtc_writer.write(u)
@@ -182,9 +199,9 @@ def PDB_to_XTC(pickle_file, template_file, output_xtc):
 # Decoded xyz coordinates to Protein
 def extract_template(pdb_file):
     """
-    Extract the original PDB template except coordinates
-    Input: Template PDB
-    Output: template without coordinates
+        Extract the original PDB template except coordinates
+        Input: Template PDB
+        Output: template without coordinates
     """
     template = []
     file = open(pdb_file).readlines()
@@ -197,15 +214,13 @@ def extract_template(pdb_file):
 
 def load_coor(coordinates, template):
     """
-    Create a template with new coordinates
-    Input: output xyz coordinates and template without coordinates 
-    Output: template with new coordinates
+        Create a template with new coordinates
+        Input: output xyz coordinates and template without coordinates 
+        Output: template with new coordinates
     """
     cur_cor = None
     cur_cor = template[:]
-
     index = 0
-
     for i in range(len(coordinates) // 3):
         x, y, z = coordinates[3 * i: 3 * (i + 1)]
         x, y, z = "%.3f" % x, "%.3f" % y, "%.3f" % z
@@ -219,8 +234,8 @@ def load_coor(coordinates, template):
 
 def write_file(pdb_file,cur_cor):
     """
-    Write the coordinates into PDB
-    Inputs: output file name and decoded template
+        Write the coordinates into PDB
+        Inputs: output file name and decoded template
     """
     file = open(pdb_file, "w")
     for line in cur_cor:

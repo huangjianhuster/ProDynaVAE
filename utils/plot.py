@@ -4,12 +4,13 @@
 
 # Dependencies
 import matplotlib.pyplot as plt
+import numpy as np
 import MDAnalysis as mda
 from MDAnalysis.analysis import dihedrals
 
 # Pre-Training Analysis
 
-def Ramachandran_plot(psf, xtc, out_path):
+def Ramachandran_plot_trj(psf, xtc, out_path):
 
     u = mda.Universe(psf, xtc)
     protein = u.select_atoms('protein')
@@ -18,35 +19,127 @@ def Ramachandran_plot(psf, xtc, out_path):
     plt.clf()
     rama = dihedrals.Ramachandran(protein).run()
     rama.plot(color='black', marker='.', ref=True,s=5)
-    plt.savefig(f"{out_path}/ramachandran.png")
+    plt.savefig(f"{out_path}/ramachandran_org.png")
 
     return None    
 
-def phi_plot(dihs, save_path):
+def Ramachandran_plot_decode(phi, psi,out_path):
+    plt.cla()
+    plt.clf()
+    ax = plt.gca()
+    ax.axis([-180, 180, -180, 180])
+    ax.axhline(0, color='k', lw=1)
+    ax.axvline(0, color='k', lw=1)
+    ax.set(xticks=range(-180, 181, 60), yticks=range(-180, 181, 60),xlabel=r"$\phi$", ylabel=r"$\psi$")
+    degree_formatter = plt.matplotlib.ticker.StrMethodFormatter(r"{x:g}$\degree$")
+    ax.xaxis.set_major_formatter(degree_formatter)
+    ax.yaxis.set_major_formatter(degree_formatter)
+    ax.scatter(phi, psi, marker='.',s=5)
+    plt.savefig(f"{out_path}/ramachandran_decoded.png")
 
+    return None
+
+def Ramachandran_plot_comp( phi, psi, phi_d, psi_d,out_path):
+
+    plt.cla()
+    plt.clf()
+    ax = plt.gca()
+    ax.axis([-180, 180, -180, 180])
+    ax.axhline(0, color='k', lw=1)
+    ax.axvline(0, color='k', lw=1)
+    ax.set(xticks=range(-180, 181, 60), yticks=range(-180, 181, 60),xlabel=r"$\phi$", ylabel=r"$\psi$")
+    degree_formatter = plt.matplotlib.ticker.StrMethodFormatter(r"{x:g}$\degree$")
+    ax.xaxis.set_major_formatter(degree_formatter)
+    ax.yaxis.set_major_formatter(degree_formatter)
+    ax.scatter(phi, psi, marker='.',s=5,c='b')
+    ax.scatter(phi_d, psi_d, marker='.',s=5,c='r',alpha=0.4)
+    plt.savefig(f"{out_path}/ramachandran_comp.png")
+
+    return None
+
+
+def phi_plot(dihs, save_path, orig):
+    plt.cla()
+    plt.clf()
     arr_test = dihs
     ave = arr_test.mean(axis=0)
     std = arr_test.std(axis=0)
-    labels = np.arange(2, len(protein.residues)+1, 1)
+    labels = np.arange(2, len(ave)+2, 1)
 
     fig, ax = plt.subplots(figsize=(16,8))
     plt.grid(True)
     ax.plot(labels, ave, lw=2,linestyle="--", c='firebrick')
-    ax.errorbar(labels, ave, yerr=std, fmt ='o', lw=2, c='darkblue')
+    ax.errorbar(labels, ave, yerr=std, fmt ='o', lw=2, c='yellow')
     plt.xticks(range(min(labels), max(labels)+1),fontsize=10)
     plt.ylabel(u"$\u03C6$ (in \N{DEGREE SIGN})", fontsize=14)
     plt.xlabel("Residue", fontsize=14)
     fig.subplots_adjust(bottom=0.5)
-    plt.savefig(f"{save_path}/phi.png")
-    plt.show()
+    plt.savefig(f"{save_path}/{orig}_phi.png")
     return None
 
-def psi_plot(dihs, save_path):
-    
+
+def phi_comp_plot(dihs_org, dihs_decoded,save_path):
+    plt.cla()
+    plt.clf()
+    arr_test_org = dihs_org
+    ave_org = arr_test_org.mean(axis=0)
+    std_org = arr_test_org.std(axis=0)
+
+    arr_test_decoded = dihs_decoded
+    ave_decoded = arr_test_decoded.mean(axis=0)
+    std_decoded = arr_test_decoded.std(axis=0)
+
+    labels = np.arange(2, len(ave_org)+2, 1)
+
+    fig, ax = plt.subplots(figsize=(16,8))
+    plt.grid(True)
+    ax.plot(labels, ave_org, lw=2,linestyle="--", c='firebrick',label="Original")
+    ax.errorbar(labels, ave_org, yerr=std_org, fmt ='o', lw=2, c='gold',label="Original")
+    ax.plot(labels, ave_decoded, lw=2,linestyle="--", c='lime', label="Decoded")
+    ax.errorbar(labels, ave_decoded, yerr=std_decoded, fmt ='o', lw=2, c='magenta',label="Decoded", alpha=0.5)
+    plt.xticks(range(min(labels), max(labels)+1),fontsize=10)
+    plt.ylabel(u"$\u03C6$ (in \N{DEGREE SIGN})", fontsize=14)
+    plt.xlabel("Residue", fontsize=14)
+    fig.subplots_adjust(bottom=0.5)
+    plt.legend()
+    plt.savefig(f"{save_path}/comp_phi.png")
+    return None
+
+def psi_comp_plot(dihs_org, dihs_decoded,save_path):
+    plt.cla()
+    plt.clf()
+    arr_test_org = dihs_org
+    ave_org = arr_test_org.mean(axis=0)
+    std_org = arr_test_org.std(axis=0)
+
+    arr_test_decoded = dihs_decoded
+    ave_decoded = arr_test_decoded.mean(axis=0)
+    std_decoded = arr_test_decoded.std(axis=0)
+
+    labels = np.arange(1, len(ave_org)+1, 1)
+
+    fig, ax = plt.subplots(figsize=(16,8))
+    plt.grid(True)
+    ax.plot(labels, ave_org, lw=2,linestyle="--", c='firebrick',label="Original")
+    ax.errorbar(labels, ave_org, yerr=std_org, fmt ='o', lw=2, c='gold',label="Original")
+    ax.plot(labels, ave_decoded, lw=2,linestyle="--", c='lime', label="Decoded")
+    ax.errorbar(labels, ave_decoded, yerr=std_decoded, fmt ='o', lw=2, c='magenta',label="Decoded",alpha=0.5)
+    plt.xticks(range(min(labels), max(labels)+1),fontsize=10)
+    plt.ylabel(u"$\u03C8$ (in \N{DEGREE SIGN})", fontsize=14)
+    plt.xlabel("Residue", fontsize=14)
+    fig.subplots_adjust(bottom=0.5)
+    plt.legend()
+    plt.savefig(f"{save_path}/comp_psi.png")
+    return None
+
+
+def psi_plot(dihs, save_path, orig):
+    plt.cla()
+    plt.clf()    
     arr_test = dihs
     ave = arr_test.mean(axis=0)
     std = arr_test.std(axis=0)
-    labels = np.arange(2, len(protein.residues)+1, 1)
+    labels = np.arange(1, len(ave)+1, 1) 
 
     fig, ax = plt.subplots(figsize=(16,8))
     plt.grid(True)
@@ -56,8 +149,7 @@ def psi_plot(dihs, save_path):
     plt.ylabel(u"$\u03C8$ (in \N{DEGREE SIGN})", fontsize=14)
     plt.xlabel("Residue", fontsize=14)
     fig.subplots_adjust(bottom=0.5)
-    plt.savefig(f"{save_path}/psi.png")
-    plt.show()
+    plt.savefig(f"{save_path}/{orig}_psi.png")
     return None
 
 # Latent space
@@ -69,7 +161,6 @@ def latent_space_plot(encoded, save_path):
     plt.clf()
     plt.scatter(a[:,0],a[:,1],c='r')
     plt.savefig(f"{save_path}/encoder_mean.png")
-    plt.show()
 
     # Latent_Mean
     b = encoded[1]
@@ -77,7 +168,6 @@ def latent_space_plot(encoded, save_path):
     plt.clf()
     plt.scatter(b[:,0],b[:,1],c='b',s=5)
     plt.savefig(f"{save_path}/encoder_variance.png")
-    plt.show()
 
     # Latent_variance
     c = encoded[2]
@@ -85,7 +175,6 @@ def latent_space_plot(encoded, save_path):
     plt.clf()
     plt.scatter(c[:,0],c[:,1],c='g',s=5)
     plt.savefig(f"{save_path}/plt_encoded.png")
-    plt.show()
 
     return None
 

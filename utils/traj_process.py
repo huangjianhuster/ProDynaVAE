@@ -25,11 +25,12 @@ def extract_pro(psf, xtc):
     protein_psf = protein.convert_to("PARMED")
     out_psf = os.path.join(dirname, basename.split('.')[0] + '_protein.psf')
     out_xtc = os.path.join(dirname, basename.split('.')[0] + '_protein.xtc')
-    protein_psf.save(out_psf)
+    if os.path.isfile(out_xtc) == False:
+        protein_psf.save(out_psf)
 
-    with mda.Writer(out_xtc, protein.n_atoms) as W:
-        for ts in u.trajectory:
-            W.write(protein)
+        with mda.Writer(out_xtc, protein.n_atoms) as W:
+            for ts in u.trajectory:
+                W.write(protein)
     # return absolute path
     return out_psf, out_xtc
 
