@@ -59,16 +59,17 @@ def get_ic(psf, xtc):
     return Ec, bonds, angles, dihedrals, R
 
 def get_xyz(psf, xtc):
+    print(psf)
+    print(xtc)
     u = mda.Universe(psf, xtc)
-    print('u')
     heavy_atoms = u.select_atoms('not name H*')
-    print("heavy")
+    print(len(heavy_atoms))
     xyz = []
     for ts in u.trajectory:
         xyz.append(heavy_atoms.positions)
-    print("list")
     xyz_array = np.array(xyz)
-    print("array")
+    print("xyz_array")
+    print(xyz_array.shape)
     return xyz_array
 
 
@@ -120,10 +121,8 @@ def scaling_spliting_cartesian(mps):
     maps = mps.reshape(mps.shape[0], -1)
     scaler = MinMaxScaler()
     scale = scaler.fit_transform(maps)
-    print(scale)
+    print(scale.shape)
     # split dataset into testing and training
     x_t, x_train, yt, yt = train_test_split(scale, scale, test_size=0.7, random_state=42)
-    print("1")
     x_val, x_test, yt ,yt  = train_test_split(x_t, x_t, test_size=0.5, random_state=42)
-    print("2")
     return scaler, x_test, x_train, x_val

@@ -23,7 +23,7 @@ def Ramachandran_plot_trj(psf, xtc, out_path):
 
     return None    
 
-def Ramachandran_plot_decode(phi, psi,out_path):
+def Ramachandran_plot_decode(phi, psi,out_path, all_hype):
     plt.cla()
     plt.clf()
     ax = plt.gca()
@@ -35,11 +35,11 @@ def Ramachandran_plot_decode(phi, psi,out_path):
     ax.xaxis.set_major_formatter(degree_formatter)
     ax.yaxis.set_major_formatter(degree_formatter)
     ax.scatter(phi, psi, marker='.',s=5)
-    plt.savefig(f"{out_path}/ramachandran_decoded.png")
+    plt.savefig(f"{out_path}/{all_hype}_ramachandran_decoded.png")
 
     return None
 
-def Ramachandran_plot_comp( phi, psi, phi_d, psi_d,out_path):
+def Ramachandran_plot_comp( phi, psi, phi_d, psi_d,out_path, all_hype):
 
     plt.cla()
     plt.clf()
@@ -53,12 +53,12 @@ def Ramachandran_plot_comp( phi, psi, phi_d, psi_d,out_path):
     ax.yaxis.set_major_formatter(degree_formatter)
     ax.scatter(phi, psi, marker='.',s=5,c='b')
     ax.scatter(phi_d, psi_d, marker='.',s=5,c='r',alpha=0.4)
-    plt.savefig(f"{out_path}/ramachandran_comp.png")
+    plt.savefig(f"{out_path}/{all_hype}_ramachandran_comp.png")
 
     return None
 
 
-def phi_plot(dihs, save_path, orig):
+def phi_plot(dihs, orig, all_hype):
     plt.cla()
     plt.clf()
     arr_test = dihs
@@ -74,11 +74,11 @@ def phi_plot(dihs, save_path, orig):
     plt.ylabel(u"$\u03C6$ (in \N{DEGREE SIGN})", fontsize=14)
     plt.xlabel("Residue", fontsize=14)
     fig.subplots_adjust(bottom=0.5)
-    plt.savefig(f"{save_path}/{orig}_phi.png")
+    plt.savefig(f"{orig}/{all_hype}_phi.png")
     return None
 
 
-def phi_comp_plot(dihs_org, dihs_decoded,save_path):
+def phi_comp_plot(dihs_org, dihs_decoded,save_path, all_hype):
     plt.cla()
     plt.clf()
     arr_test_org = dihs_org
@@ -102,10 +102,10 @@ def phi_comp_plot(dihs_org, dihs_decoded,save_path):
     plt.xlabel("Residue", fontsize=14)
     fig.subplots_adjust(bottom=0.5)
     plt.legend()
-    plt.savefig(f"{save_path}/comp_phi.png")
+    plt.savefig(f"{save_path}/{all_hype}_comp_phi.png")
     return None
 
-def psi_comp_plot(dihs_org, dihs_decoded,save_path):
+def psi_comp_plot(dihs_org, dihs_decoded,save_path, all_hype):
     plt.cla()
     plt.clf()
     arr_test_org = dihs_org
@@ -129,11 +129,11 @@ def psi_comp_plot(dihs_org, dihs_decoded,save_path):
     plt.xlabel("Residue", fontsize=14)
     fig.subplots_adjust(bottom=0.5)
     plt.legend()
-    plt.savefig(f"{save_path}/comp_psi.png")
+    plt.savefig(f"{save_path}/{all_hype}_comp_psi.png")
     return None
 
 
-def psi_plot(dihs, save_path, orig):
+def psi_plot(dihs, orig, all_hype):
     plt.cla()
     plt.clf()    
     arr_test = dihs
@@ -149,7 +149,7 @@ def psi_plot(dihs, save_path, orig):
     plt.ylabel(u"$\u03C8$ (in \N{DEGREE SIGN})", fontsize=14)
     plt.xlabel("Residue", fontsize=14)
     fig.subplots_adjust(bottom=0.5)
-    plt.savefig(f"{save_path}/{orig}_psi.png")
+    plt.savefig(f"{orig}/{all_hype}_psi.png")
     return None
 
 # Latent space
@@ -191,7 +191,7 @@ def train_test_loss_plot(history, out_path,all_hype):
     plt.clf()
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
-    plt.title(f'loss{out_path}')
+    plt.title(f'loss{all_hype}')
     plt.ylabel('loss')
     plt.xlabel('epoch')
     plt.legend(['train', 'test'], loc='upper left')
@@ -216,7 +216,7 @@ def Testing_analysis_plot(summary, out_path):
     plt.scatter(hyper_together_arr, Spearmann_arr )
     plt.ylabel('hyperparameters')
     plt.xlabel('Spearmann')
-    plt.savefig(f"{out_path}/Spearmann_arr.png")
+    plt.savefig(f"{out_path}/{all_hype}_Spearmann_arr.png")
 
 
     # Plot Pearson
@@ -226,7 +226,7 @@ def Testing_analysis_plot(summary, out_path):
     plt.scatter(hyper_together_arr, Pearson_arr)
     plt.ylabel('hyperparameters')
     plt.xlabel('Pearson')
-    plt.savefig(f"{out_path}/Pearson_arr.png")    
+    plt.savefig(f"{out_path}/{all_hype}_Pearson_arr.png")    
     
     # Plot RMSD
     plt.cla()
@@ -235,14 +235,14 @@ def Testing_analysis_plot(summary, out_path):
     plt.scatter(hyper_together_arr, RMSD_arr)
     plt.ylabel('hyperparameters')
     plt.xlabel('RMSD')
-    plt.savefig(f"{out_path}/RMSD_arr.png")
+    plt.savefig(f"{out_path}/{all_hype}_RMSD_arr.png")
 
     return None
         
     
 
 # Post-training Analysis
-def Post_training_analysis_plot(rmsd, c_resids, rmsf, Rgyr, residues, helicity_ave, sheet_ave, out_path):
+def Post_training_analysis_plot(rmsd, c_resids, rmsf, Rgyr, residues, helicity_ave, sheet_ave, out_path, all_hype):
 
     """
     Plot all the analysis on the decoded trajectory
@@ -254,7 +254,7 @@ def Post_training_analysis_plot(rmsd, c_resids, rmsf, Rgyr, residues, helicity_a
     plt.plot(rmsd[1],rmsd[2])
     plt.ylabel("RMSD (C$\u03B1$) in $\AA$")
     plt.xlabel('time (ns)')
-    plt.savefig(f"{out_path}/protein_rmsd.png")
+    plt.savefig(f"{out_path}/{all_hype}_protein_rmsd.png")
     
     # RMSF
     plt.cla()
@@ -262,7 +262,7 @@ def Post_training_analysis_plot(rmsd, c_resids, rmsf, Rgyr, residues, helicity_a
     plt.plot(c_resids, rmsf)
     plt.ylabel("RMSF (C$\u03B1$) in $\AA$")
     plt.xlabel('residue')
-    plt.savefig(f"{out_path}/residue.png")
+    plt.savefig(f"{out_path}/{all_hype}_residue.png")
 
     # Rg
     plt.cla()
@@ -270,7 +270,7 @@ def Post_training_analysis_plot(rmsd, c_resids, rmsf, Rgyr, residues, helicity_a
     plt.plot(Rgyr[:,0], Rgyr[:,1])
     plt.ylabel(r"radius of gyration $R_G$ ($\AA$)")
     plt.xlabel("time (ps)")
-    plt.savefig(f"{out_path}/Rg.png")
+    plt.savefig(f"{out_path}/{all_hype}_Rg.png")
 
     # Helicity
     plt.cla()
@@ -278,7 +278,7 @@ def Post_training_analysis_plot(rmsd, c_resids, rmsf, Rgyr, residues, helicity_a
     plt.plot(residues, helicity_ave)
     plt.ylabel("Helicilty")
     plt.xlabel('residues')
-    plt.savefig(f"{out_path}/helicity.png")
+    plt.savefig(f"{out_path}/{all_hype}_helicity.png")
 
     # Sheet 
     plt.cla()
@@ -286,6 +286,6 @@ def Post_training_analysis_plot(rmsd, c_resids, rmsf, Rgyr, residues, helicity_a
     plt.plot(residues, sheet_ave)
     plt.ylabel("Sheet")
     plt.xlabel('residues')
-    plt.savefig(f"{out_path}/Sheet.png")
+    plt.savefig(f"{out_path}/{all_hype}_Sheet.png")
 
     return None

@@ -14,7 +14,7 @@ import numpy as np
 def Hidden_layer_neurons(latent_dim, original_dim, number_of_hidden_layers):
     # Get number of neurons for each hidden layer
 
-    
+    print(original_dim,"original_dim,")   
     neuron_layer = np.zeros(number_of_hidden_layers + 1).astype(int)
     neuron_layer[0] = latent_dim
     neuron_layer[-1] = original_dim

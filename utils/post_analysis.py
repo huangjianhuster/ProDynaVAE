@@ -46,10 +46,10 @@ def post_analysis(summary, input_args, psf, xtc, outtraj_dirname, R, template_fi
             phi_demap = demap_degrees[:,:int(len(demap_degrees[0])/2)]
             psi_demap = demap_degrees[:, int(len(demap_degrees[0])/2):]
  
-            phi_comp_plot(phi, phi_demap, new_fold)
-            psi_comp_plot(psi, psi_demap, new_fold)
-            Ramachandran_plot_decode(phi_demap, psi_demap, new_fold)
-            Ramachandran_plot_comp(phi, psi, phi_demap, psi_demap, stor_fold)
+            phi_comp_plot(phi, phi_demap, new_fold,hype)
+            psi_comp_plot(psi, psi_demap, new_fold,hype)
+            Ramachandran_plot_decode(phi_demap, psi_demap, new_fold, hype)
+            Ramachandran_plot_comp(phi, psi, phi_demap, psi_demap, stor_fold, hype)
                     
         elif input_args == "cartesian":
             demap = model["demap"]
@@ -63,6 +63,6 @@ def post_analysis(summary, input_args, psf, xtc, outtraj_dirname, R, template_fi
         c_alphas, rmsf_matrix = traj_rmsf(psf, decoded_traj)
         Rgyr = traj_rg(psf, decoded_traj)
         residues, helicity_ave, sheet_ave = traj_ss(psf, decoded_traj)
-        Post_training_analysis_plot(rmsd, c_alphas, rmsf, Rgyr, residues, helicity_ave, sheet_ave, out_path)
+        Post_training_analysis_plot(rmsd, c_alphas, rmsf, Rgyr, residues, helicity_ave, sheet_ave, out_path, hype)
 
     return None

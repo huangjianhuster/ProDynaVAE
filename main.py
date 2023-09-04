@@ -53,6 +53,7 @@ def main():
     outtraj_basename = os.path.basename(out_traj)
     outtraj_dirname = os.path.dirname(out_traj)
     aligned_traj = os.path.join(outtraj_dirname , outtraj_basename.split('.')[0] + '_aligned.xtc')
+    print("aligned_traj",aligned_traj)
     if os.path.isfile(aligned_traj) == False:
         traj_align_onfly(out_psf, out_traj, aligned_traj)
 
@@ -73,7 +74,7 @@ def main():
 
     elif input_args['input_type'] == "cartesian":
         print("deal with cartesian coordinates")
-        coordinates = get_xyz(psf, traj)
+        coordinates = get_xyz(out_psf, aligned_traj)
         print(coordinates)
         scaler, test, train, val = scaling_spliting_cartesian(coordinates)
         print("scaler")

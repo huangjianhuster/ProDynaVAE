@@ -27,11 +27,12 @@ def extract_pro(psf, xtc):
     out_xtc = os.path.join(dirname, basename.split('.')[0] + '_protein.xtc')
     if os.path.isfile(out_xtc) == False:
         protein_psf.save(out_psf)
-
+        print("Here if")
         with mda.Writer(out_xtc, protein.n_atoms) as W:
             for ts in u.trajectory:
                 W.write(protein)
     # return absolute path
+    print("extract_pro",out_psf,out_xtc)
     return out_psf, out_xtc
 
 # protein centering and alignment

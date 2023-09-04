@@ -88,7 +88,7 @@ def training(**kwargs):
     #latent_space_plot(encoded, save_path)
 
     # Evaluation 
-    Spearmann, Pearson, RMSD = evaluate(encoded, demap, x_test, scaler) 
+    Spearmann, Pearson, pv_spearman, pv_pearson, RMSD = evaluate(encoded, demap, x_test, scaler) 
     print(Spearmann, Pearson, RMSD)
     # Create return dict
     return_dict = {}
