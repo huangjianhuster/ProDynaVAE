@@ -59,19 +59,26 @@ def get_ic(psf, xtc):
     return Ec, bonds, angles, dihedrals, R
 
 def get_xyz(psf, xtc):
-    print(psf)
-    print(xtc)
     u = mda.Universe(psf, xtc)
     heavy_atoms = u.select_atoms('not name H*')
-    print(len(heavy_atoms))
     xyz = []
     for ts in u.trajectory:
         xyz.append(heavy_atoms.positions)
     xyz_array = np.array(xyz)
-    print("xyz_array")
-    print(xyz_array.shape)
     return xyz_array
 
+def get_cxyz(psf, xtc):
+    u = mda.Universe(psf, xtc)
+    CA_atoms = u.select_atoms('name CA')
+    xyz = []
+    for ts in u.trajectory:
+        xyz.append(CA_atoms.positions)
+    xyz_array = np.array(xyz)
+    return xyz_array
+
+def get_contact_map(psf, xtc):
+    u = mda.Universe(psf, xtc)
+    return None    
 
 # https://userguide.mdanalysis.org/1.1.1/examples/analysis/structure/dihedrals.html
 def get_bbtorsion(psf, xtc):
@@ -98,7 +105,7 @@ def get_bbtorsion(psf, xtc):
 #    bb_torsion[:, 1::2] = psis_traj
     return phis_traj.angles, psis_traj.angles
 
-def scaling_spliting_dihedrals(arr):
+def scaling_spliting_dihedrals(arr, split):
     """
     arr: the input array
     return scaler, x_test, x_train
@@ -111,18 +118,17 @@ def scaling_spliting_dihedrals(arr):
     scale = scaler.fit_transform(maps)
 
     # split dataset into testing and training
-    x_train, x_t, y_train, y_t = train_test_split(maps_scale, scale, test_size=0.7, random_state=42)
-    x_val, x_test, y_val, y_test = train_test_split(x_t, y_t, test_size=0.5, random_state=42)
+    x_train, x_test, y_train, y_t = train_test_split(maps_scale, scale, test_size=split, random_state=42)
+ #   x_val, x_test, y_val, y_test = train_test_split(x_t, y_t, test_size=0.5, random_state=42)
     #x_test = scale[::4]
     #x_train = np.delete(scale, list(range(0, scale.shape[0], 4)), axis=0)
-    return scaler, x_test, x_train, x_val
+    return scaler, x_test, x_train
 
-def scaling_spliting_cartesian(mps):
+def scaling_spliting_cartesian(mps, split):
     maps = mps.reshape(mps.shape[0], -1)
     scaler = MinMaxScaler()
     scale = scaler.fit_transform(maps)
-    print(scale.shape)
     # split dataset into testing and training
-    x_t, x_train, yt, yt = train_test_split(scale, scale, test_size=0.7, random_state=42)
-    x_val, x_test, yt ,yt  = train_test_split(x_t, x_t, test_size=0.5, random_state=42)
-    return scaler, x_test, x_train, x_val
+    x_test, x_train, yt, yt = train_test_split(scale, scale, test_size=split, random_state=42)
+#    x_val, x_test, yt ,yt  = train_test_split(x_t, x_t, test_size=0.5, random_state=42)
+    return scaler, x_test, x_train

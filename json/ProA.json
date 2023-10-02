@@ -1,0 +1,30 @@
+{
+    "trj": "/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_1BDC/charmm-gui-8986125038/gromacs/step5_1_align.xtc",
+    "psf": "/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_1BDC/charmm-gui-8986125038/step1_pdbreader.psf",
+    "pdb": "/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_1BDC/charmm-gui-8986125038/gromacs/step5_1_protein.pdb",
+    "datapath": "ProA_20K/",
+    "early_stopping": true,
+    "seed": 4,
+    "post_analysis": true,
+    "input_type": "cartesian",
+    "timestep": 5,
+    "selection": "protein and backbone and (resid 42:55 or resid 27:35)",
+    "rmsd_names": ["Frame", "Time", "Helix", "Backbone", "N-Terminals", "C-Terminals"],
+    "rmsd_cal": [
+        "protein and backbone",
+        "protein and backbone and resid 1:9",
+        "protein and backbone and resid 58:60"
+    ],
+    "split": 0.7,
+    "BATCH_SIZE": [
+        100
+    ],
+    "LATENT_DIM": [4, 6, 8],
+    "NUM_HIDDEN_LAYER": [4, 6, 8 ],
+    "EPOCHS": [
+        10000
+    ],
+    "RATE": [
+        0.0005
+    ]
+}

@@ -1,0 +1,27 @@
+{
+    "trj": "P53/p53.1.dcd",
+    "psf": "P53/p53.1.pdb",
+    "pdb": "P53/p53.1.pdb",
+    "datapath": "P53/",
+    "early_stopping": true,
+    "seed": 4,
+    "post_analysis": true,
+    "input_type": "cartesian",
+    "timestep": 5,
+    "selection": "protein and backbone",
+    "rmsd_names": ["Frame", "Time", "Protein", "Protein"],
+    "rmsd_cal": [
+        "protein and backbone" , "protein and backbone"],
+    "split": 0.7,
+    "BATCH_SIZE": [
+        100
+    ],
+    "LATENT_DIM": [4, 6],
+    "NUM_HIDDEN_LAYER": [4],
+    "EPOCHS": [
+        10
+    ],
+    "RATE": [
+        0.0005
+    ]
+}

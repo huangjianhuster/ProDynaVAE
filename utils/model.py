@@ -11,11 +11,10 @@ from tensorflow.keras import losses
 from tensorflow.keras.optimizers import Adam
 import numpy as np
 
+
 def Hidden_layer_neurons(latent_dim, original_dim, number_of_hidden_layers):
     # Get number of neurons for each hidden layer
-
-    print(original_dim,"original_dim,")   
-    neuron_layer = np.zeros(number_of_hidden_layers + 1).astype(int)
+    neuron_layer = np.zeros(number_of_hidden_layers + 2).astype(int)
     neuron_layer[0] = latent_dim
     neuron_layer[-1] = original_dim
 
@@ -23,7 +22,7 @@ def Hidden_layer_neurons(latent_dim, original_dim, number_of_hidden_layers):
     min_nodes = latent_dim*5
     neuron_layer[1] = min_nodes
     neuron_layer_betw = []
-    for i in range(2, number_of_hidden_layers, 1):
+    for i in range(2, number_of_hidden_layers+1, 1):
         neuron_layer_betw.append((max_nodes - min_nodes) / 2)
         min_nodes = min(neuron_layer_betw)
         if len(neuron_layer_betw) >= 2:
@@ -84,10 +83,6 @@ def vae_encoder(original_dim, latent_dim=2, num_of_hidden_layer=4):
 
     # create encoder
     encoder = Model(encoder_input, [z_mean, z_log_var, z])
-    print(encoder,"encoder,")
-    print(z_mean,"z_mean,")
-    print(z_log_var,"z_log_var,")
-    print(encoder_input, "encoder_input")
     return encoder, z_mean, z_log_var, encoder_input
 
 def vae_decoder(original_dim, latent_dim=2, num_of_hidden_layer=4):    
@@ -143,7 +138,7 @@ def build_vae(original_dim, latent_dim=2, num_of_hidden_layer=4, rate=0.0001):
     vae: keras.Model
         constructed VAE model
     """
-
+    K.clear_session()
     # init encoder and decoder
     encoder, z_mean, z_log_var, encoder_input = vae_encoder(
         original_dim, latent_dim, num_of_hidden_layer

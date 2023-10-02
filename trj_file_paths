@@ -1,0 +1,18 @@
+Gromacs script:
+shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/src/Analysis/trj.sh
+
+ProA_20K:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_1BDC/charmm-gui-8986125038/gromacs
+
+ProG_20K and Pro_15K:
+/home/shrishti/Documents/Projects/IDP_ensemble/protein-VAE-main_org/charmm-gui_3GB1/gromacs
+
+ProG_200K
+/home/shrishti/Documents/pikes/work/gromacs/ProteinG/gromacs
+
+ProA_200K
+/home/shrishti/Documents/pikes/work/gromacs/ProteinA/gromacs
+
+P53
+/home/shrishti/Documents/Projects/IDP_ensemble/ProDynamics/ 
+

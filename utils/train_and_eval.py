@@ -6,15 +6,21 @@ from sklearn.metrics.pairwise import euclidean_distances
 from scipy.stats import spearmanr, pearsonr
 import numpy as np
 from sklearn.preprocessing import MinMaxScaler
+import matplotlib as mpl
 import MDAnalysis as mda
 from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.callbacks import TensorBoard
 from tensorflow import random
 import sys
 import datetime
+from subprocess import run
+
+import multiprocessing
+from multiprocessing import Lock, Process, Queue, current_process
 
 from utils.model import *
 from utils.plot import *
+
 
 def training(**kwargs):
     """
@@ -34,12 +40,10 @@ def training(**kwargs):
         }
 
     """
-
     seed = kwargs['seed']
     random.set_seed(seed)
     scaler = kwargs['scaler']
     x_test = kwargs['x_test']
-    x_val = kwargs['x_val']
     x_train = kwargs['x_train']
     original_dim = x_train.shape[1]
 
@@ -63,7 +67,7 @@ def training(**kwargs):
         history = vae.fit(x=x_train, y=x_train,
                 shuffle=True,
                 epochs=EPOCHS,
-                validation_data=(x_val, x_val),
+                validation_split=0.2, # validation_data=(x_val, x_val),
                 verbose=2,
                 callbacks = [tensorboard_callback])
     else:
@@ -72,24 +76,26 @@ def training(**kwargs):
         history = vae.fit(x=x_train, y=x_train,
                 shuffle=True,
                 epochs=EPOCHS,
-                validation_data=(x_val, x_val),
+                validation_split=0.2, # validation_data=(x_val, x_val),
                 verbose=2,
                 callbacks=[early_stopping, tensorboard_callback])
 
-    all_hype = f"B{BATCH_SIZE}LD{LATENT_DIM}HL{NUM_HIDDEN_LAYER}E{EPOCHS}R{RATE}"
+
+    formatter = mpl.ticker.EngFormatter()
+    all_hype = f"B{BATCH_SIZE}LD{LATENT_DIM}HL{NUM_HIDDEN_LAYER}E{EPOCHS}R{RATE}S{kwargs['split']}"
     # Plot losses
     plot1 = train_test_loss_plot(history, outtraj_dirname, all_hype)
     # TEST 
     encoded = encoder.predict(x_test, batch_size=BATCH_SIZE)
     decoded = decoder.predict(encoded[0])
     demap =  scaler.inverse_transform(decoded)     
-
+    x_train = scaler.inverse_transform(x_train)
+    x_test = scaler.inverse_transform(x_test)
     # Plot here
     #latent_space_plot(encoded, save_path)
 
     # Evaluation 
-    Spearmann, Pearson, pv_spearman, pv_pearson, RMSD = evaluate(encoded, demap, x_test, scaler) 
-    print(Spearmann, Pearson, RMSD)
+    Spearmann, Pearson, pv_spearman, pv_pearson, RMSD_mean, RMSD_std = evaluate(encoded, demap, x_test, scaler) 
     # Create return dict
     return_dict = {}
     
@@ -99,15 +105,16 @@ def training(**kwargs):
     return_dict['EPOCHS'] = EPOCHS
     return_dict['RATE'] = RATE
 
+    return_dict['test'] = x_test
+    return_dict['train'] = x_train
     return_dict['Spearmann'] = Spearmann
     return_dict['Pearson'] = Pearson 
-    return_dit['pv_spearman'] = pv_spearman
-    return_dit['pv_pearson'] = pv_pearson
-    return_dict['RMSD'] = RMSD
- 
+    return_dict['pv_spearman'] = pv_spearman
+    return_dict['pv_pearson'] = pv_pearson
+    return_dict['RMSD_mean'] = RMSD_mean
+    return_dict['RMSD_std'] = RMSD_std
     return_dict['demap'] = demap
     return_dict['outtraj_dirname'] = outtraj_dirname
-    
     return_dict['hyper_together'] = all_hype
     return return_dict
 
@@ -116,8 +123,8 @@ def training(**kwargs):
 
 def evaluate(encoded, demap, x_test, scaler):
     Spearmann, Pearson, pv_spearman, pv_pearson = cal_spearman(x_test, encoded[0])
-    RMSD = cal_rmsd(x_test, demap)
-    return Spearmann, Pearson, pv_spearman, pv_pearson, RMSD
+    RMSD_mean, RMSD_std = cal_rmsd(x_test, demap)
+    return Spearmann, Pearson, pv_spearman, pv_pearson, RMSD_mean, RMSD_std
 
 # Spearmann correlation and Pearson correlation
 def cal_spearman(data_original, data_encoded):
@@ -142,8 +149,9 @@ def cal_rmsd(data_original, data_decoded):
 def dihedral_demap_to_PDB(Ic_bonds, Ic_angles, Ec, torsion,pdb_temp, outtraj_dirname,R):
     Ic_bonds_angles_ave = np.average(np.concatenate([Ic_bonds, Ic_angles], axis=1), axis=0)
     new_fold = f"{outtraj_dirname}/pdb"
-    path = os.path.join(outtraj_dirname,"pdb")
-    os.mkdir(path)
+    if os.path.exists(new_fold) == False:
+        path = os.path.join(outtraj_dirname,"pdb")
+        os.mkdir(path)
     i = 0
     file = []
     for tors in torsion:
@@ -164,35 +172,74 @@ def dihedral_demap_to_PDB(Ic_bonds, Ic_angles, Ec, torsion,pdb_temp, outtraj_dir
     pick_file = f"{new_fold}/pickle_file.pkl"
     return pick_file, new_fold
 
-def cartesian_demap_to_PDB(demap, outtraj_dirname):
-    new_fold = f"{outtraj_dirname}/pdb"
-    path = os.path.join(outtraj_dirname,"pdb")
-    os.mkdir(path)
+def cartesian_demap_to_PDB(demap, outtraj_dirname, pdb_temp):
+    i = 0
+    file = []
     for x in demap:
         template = extract_template(pdb_temp)
         coorinates = load_coor( x,template)
-        write_file(f"{new_fold}/{i}.pdb",coorinates)
+        write_file(f"{outtraj_dirname}/{i}.pdb",coorinates)
         file.append(f"{i}.pdb")
         i += 1
-    with open(f"{new_fold}/pickle_file.pkl", 'wb') as w:
+    with open(f"{outtraj_dirname}/pickle_file.pkl", 'wb') as w:
         pickle.dump(file, w)
-    pick_file = f"{new_fold}/pickle_file.pkl"
-    return pick_file, new_fold
+    pick_file = f"{outtraj_dirname}/pickle_file.pkl"
+    return pick_file
 
-def PDB_to_XTC(pickle_file, template_file, output_xtc):
+# CA to fully-atomic
+def CAtoFull(pick_file, outtraj_dirname):
+    pick_file1 = []
+    pdb_file = pickle.load(open(f"{pick_file}",'rb'))
+    k = 0
+    for i in range(0,len(pdb_file),12):
+        #sm1 = []
+        for j in range(k,12,1): 
+            sm = f'./scripts/ModRefiner-l/mcrefinement {outtraj_dirname}  scripts/ModRefiner-l {pdb_file[j]} {pdb_file[j]} 5'.split()
+            #sm1.append(f"p{j}")
+            sm1 = multiprocessing.Process(target=sm)
+            sm1.start()
+            sm1.join() 
+        emd1 = []
+        for j in range(k,12,1):
+            emd = f'./scripts/ModRefiner-l/mcrefinement {outtraj_dirname}  scripts/ModRefiner-l {pdb_file[j]} {pdb_file[j]} 100 5'.split()
+            emd1.append(f"p{j}")
+            emd1 = multiprocessing.Process(emd)
+            emd1.start()
+            emd1.join()
+            pick_file1.append(f"em{pdb_file[j]}")
+        k = k + 12
+    with open(f"{outtraj_dirname}/pickle_file_new.pkl", 'wb') as w:
+        pickle.dump(pdb_file, outtraj_dirname)
+    pick_file1 = f"{outtraj_dirname}/pickle_file_new.pkl"
+    return pick_file1
+
+def PDB_to_XTC(pickle_file, template_file, output_xtc,time_s):
     """
         Mutiple PDB to XTC conveter 
     """
     pdb_file = pickle.load(open(f"{pickle_file}",'rb'))
     reformat_pdbfiles = [(i) for i in pdb_file]
-    u = mda.Universe(f"{template_file}")
-  
-    with mda.Writer(f"{output_xtc}/output_xtc.xtc", len(u.atoms)) as xtc_writer:
+    u = mda.Universe(template_file)
+
+    xtc_tmp = f"{output_xtc}/output_tmp.xtc"
+    xtc_file = f"{output_xtc}/output_xtc.xtc"  
+    with mda.Writer(xtc_tmp, len(u.atoms)) as xtc_writer:
         for pdb_file1 in reformat_pdbfiles[0:]:
-                u.load_new(pdb_file1)  # Load each PDB file into the Universe
-                xtc_writer.write(u)
-        for temp_file in pdb_file:
-            os.system("rm %s" % temp_file)
+            u.load_new(f"{output_xtc}/{pdb_file1}")  # Load each PDB file into the Universe
+            xtc_writer.write(u)
+
+    # Add time step in the trajectory
+    u2 = mda.Universe(template_file, xtc_tmp)
+    for ts in u2.trajectory:
+        ts.data['dt'] = time_s
+        ts.data['time'] = ts.frame*time_s
+        ts.data['step'] = ts.frame
+    with mda.Writer(xtc_file, u2.atoms.n_atoms) as W:
+        for ts in u2.trajectory:
+            W.write(u2.atoms)
+    for temp_file in pdb_file:
+        os.system("rm %s" % f"{output_xtc}/{temp_file}")
+    os.system("rm %s" % xtc_tmp)
     return None
 
 

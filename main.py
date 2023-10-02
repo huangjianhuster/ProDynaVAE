@@ -34,9 +34,14 @@ def main():
 
     seed = input_args['seed'] 
     data_path = input_args['datapath']
-    traj = os.path.join(data_path, input_args['trj'])
-    psf = os.path.join(data_path, input_args['psf'])
-    pdb = os.path.join(data_path, input_args['pdb'])
+#    traj = os.path.join(data_path, input_args['trj'])
+#    psf = os.path.join(data_path, input_args['psf'])
+#    pdb = os.path.join(data_path, input_args['pdb'])
+
+    traj = input_args['trj']
+    psf = input_args['psf']
+    pdb = input_args['pdb']
+
     
     hyperparams_dict = {'BATCH_SIZE': input_args['BATCH_SIZE'], # give a 'list' type
                         'LATENT_DIM': input_args['LATENT_DIM'], #  give a 'list' type
@@ -45,43 +50,53 @@ def main():
                         'RATE': input_args['RATE'], # give a 'list' type
                         }
     hyperparams_combinations = gen_parms_combinations(**hyperparams_dict)
-    print(hyperparams_combinations)
 
     random.set_seed(seed)
     # extract protein from raw trajectory
-    out_psf, out_traj = extract_pro(psf, traj)
-    outtraj_basename = os.path.basename(out_traj)
-    outtraj_dirname = os.path.dirname(out_traj)
-    aligned_traj = os.path.join(outtraj_dirname , outtraj_basename.split('.')[0] + '_aligned.xtc')
-    print("aligned_traj",aligned_traj)
-    if os.path.isfile(aligned_traj) == False:
-        traj_align_onfly(out_psf, out_traj, aligned_traj)
+#    out_psf, out_traj = extract_pro(psf, traj)
+#    outtraj_basename = os.path.basename(out_traj)
+    out_psf = psf
+    outtraj_dirname = data_path
 
+    aligned_traj = traj
+#    if os.path.isfile(aligned_traj) == False:
+#        traj_align_onfly(out_psf, out_traj, aligned_traj)
+    outtraj_dir = outtraj_dirname
+    outtraj_dirname = f"{outtraj_dir}{input_args['input_type']}"
+    if os.path.exists(outtraj_dirname) == False:
+        path = os.path.join(outtraj_dirname)
+        os.mkdir(path)
     # generate input array
+
     if input_args['input_type'] == "dihedral_all":
         Ec, bonds, angles, dihedrals, R = get_ic(out_psf, aligned_traj)
-        scaler, test, train, val = scaling_spliting_dihedrals(dihedrals)
+        scaler, test, train = scaling_spliting_dihedrals(dihedrals)
         
     elif input_args['input_type'] == "dihedral_backbone":
         original = "original"
+        R =  None
         phi, psi = get_bbtorsion(psf, traj)
         dihedrals = np.concatenate((phi,psi),axis=1)
         dihedrals = dihedrals*(np.pi/180)
         Ramachandran_plot_trj(psf, traj, outtraj_dirname)
-        scaler, test, train, val = scaling_spliting_dihedrals(dihedrals)
+        scaler, test, train = scaling_spliting_dihedrals(dihedrals)
 #        phi_plot(phi, outtraj_dirname, original)
 #        psi_plot(psi, outtraj_dirname, original)
 
     elif input_args['input_type'] == "cartesian":
-        print("deal with cartesian coordinates")
-        coordinates = get_xyz(out_psf, aligned_traj)
-        print(coordinates)
-        scaler, test, train, val = scaling_spliting_cartesian(coordinates)
-        print("scaler")
+        R = None
+        coordinates = get_xyz(pdb, aligned_traj)
+        scaler, test, train = scaling_spliting_cartesian(coordinates, input_args['split'])
+
+    elif input_args['input_type'] == "calpha":
+        R = None
+        coordinates = get_cxyz(pdb, aligned_traj)
+        scaler, test, train = scaling_spliting_cartesian(coordinates , input_args['split'])
 
     elif input_args['input_type'] == "contact_map":
-        contact_map = get_contact_map(psf, traj)
-        scaler, test, train, val = scaling_spliting_contact_map(contact_map)
+        R = None
+        contact_map = get_contact_map(out_psf, aligned_traj)
+        scaler, test, train = scaling_spliting_contact_map(contact_map, input_args['split'])
 
     # additional params
     early_stopping = input_args['early_stopping']
@@ -96,11 +111,10 @@ def main():
         training_input['scaler'] = scaler
         training_input['x_train'] = train
         training_input['x_test'] = test
-        training_input['x_val'] = val
+        training_input['split'] = input_args['split']
         training_input['early_stopping'] = early_stopping
         training_input['seed'] = seed
         training_input['outtraj_dirname'] = outtraj_dirname
-
         # VAE model evaluation
         return_dict = training(**training_input)
         # dict to store RMSD and correlation;
@@ -112,7 +126,7 @@ def main():
     # generate the PDB file and further analysis
     if post_analysis == True:
         # original trajectory analysis 
-        post_analysis(summary, input_args['input_type'],psf, xtc, outtraj_dirname, R, template_file)
+        Post_Analysis(Summary,input_args['input_type'], out_psf, aligned_traj, outtraj_dirname, pdb, input_args['timestep'], input_args['rmsd_names'],input_args['rmsd_cal'],input_args['selection'])
 
     return None
 

@@ -27,12 +27,10 @@ def extract_pro(psf, xtc):
     out_xtc = os.path.join(dirname, basename.split('.')[0] + '_protein.xtc')
     if os.path.isfile(out_xtc) == False:
         protein_psf.save(out_psf)
-        print("Here if")
         with mda.Writer(out_xtc, protein.n_atoms) as W:
             for ts in u.trajectory:
                 W.write(protein)
     # return absolute path
-    print("extract_pro",out_psf,out_xtc)
     return out_psf, out_xtc
 
 # protein centering and alignment
@@ -106,8 +104,22 @@ def traj_align_onfly(psf, xtc, out_xtc, center=True):
 
     return None
 
+def heavy_atom_templete(pdb, new_pdb,new_gro):
+    u = mda.Universe(pdb)
+    heavy_atoms = u.select_atoms('not name H* and not (resname AMN or resname CBX)')
+    heavy_atoms.write(new_pdb)
+    heavy_atoms.write(new_gro)
+    return None    
+
+def CA_atom_templete(pdb, new_pdb,new_gro):
+    u = mda.Universe(pdb)
+    CA_atoms = u.select_atoms('name CA')
+    CA_atoms.write(new_pdb)
+    CA_atoms.write(new_gro)
+    return None
+
 # RMSD calculation
-def traj_rmsd(psf, xtc):
+def traj_rmsd(psf, xtc, align_select, rmsd_list):
     """
     psf: PSF or TPR
     xtc: already_aligned XTC or DCD
@@ -115,16 +127,15 @@ def traj_rmsd(psf, xtc):
         rmsd_matrix has a shape of (4, number_of_frames)
         rmsd_matrix[0]: frames
         rmsd_matrix[1]: time
-        rmsd_matrix[2]: rmsd of C-alpha
-        rmsd_matrix[4]: rmsd of protein
+        rmsd_matrix[2]: rmsd of align_select
+        rmsd_matrix[3-]: rmsd of rmsd_list
     """
     u = mda.Universe(psf, xtc)
     ref = mda.Universe(psf, xtc)
     ref.trajectory[0]
-    R = rms.RMSD(u, ref, select="name CA", groupselections=["protein",])
+    R = mda.analysis.rms.RMSD(u,ref,select=align_select,groupselections=rmsd_list)
     R.run()
-    rmsd_matrix = R.rmsd.T
-    return rmsd_matrix
+    return R.results.rmsd.T
 
 # RMSF calculation: only for C-alpha
 def traj_rmsf(psf, xtc):
@@ -139,7 +150,7 @@ def traj_rmsf(psf, xtc):
     c_alphas = u.select_atoms('protein and name CA')
     R = rms.RMSF(c_alphas).run()
     rmsf_matrix = R.results.rmsf
-    return c_alphas.resids, rmsf_matrix
+    return c_alphas.resnums, rmsf_matrix
 
 # radius of gyration (IDP protein)
 def traj_rg(psf, xtc):
@@ -151,7 +162,7 @@ def traj_rg(psf, xtc):
     u = mda.Universe(psf, xtc)
     Rgyr = []
     for ts in u.trajectory:
-        Rgyr.append(u.trajectory.time, u.atoms.radius_of_gyration())
+        Rgyr.append( u.atoms.radius_of_gyration())
     Rgyr = np.array(Rgyr)
     return Rgyr
 
@@ -161,13 +172,13 @@ def traj_ss(psf, xtc):
         traj = md.load(xtc, top=psf)
     if xtc.endswith("dcd"):
         traj = md.load_dcd(xtc, top=psf)
-    residues = list(traj.topology.residues)
+#    residues = list(traj.topology.residues)
     dssp = md.compute_dssp(traj, simplified=True)
     helicity = np.where(dssp=='H', 1, 0)
     helicity_ave = np.sum(helicity, 0) / helicity.shape[0]
     sheet = np.where(dssp=='E', 1, 0)
     sheet_ave = np.sum(sheet, 0) / sheet.shape[0]
-    return residues, helicity_ave, sheet_ave
+    return  helicity_ave, sheet_ave
 
 # PCA analysis
 def traj_pca(psf, xtc):
