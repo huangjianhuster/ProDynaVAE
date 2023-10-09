@@ -526,3 +526,18 @@ def Post_training_analysis_plot_comp(rmsd1, c_resids1, rmsf1, Rgyr1, helicity_av
 
     return None
 
+# plot distribution
+def plot_distribution(array_data, bins=100):
+    data = array_data.flatten()
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    n, bins, patches = ax.hist(data, bins, density=True, alpha=0.75, color='green', edgecolor='gray')
+    # ax.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    # ax.set_ylim([0, 1])
+    ax.set_xlabel("CV", fontsize=16)
+    ax.set_ylabel("Probability", fontsize=16)
+    ax.tick_params(axis='both', which='major', length=10, labelsize=16)
+    # ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    # ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    ax.grid()
+    plt.show()
