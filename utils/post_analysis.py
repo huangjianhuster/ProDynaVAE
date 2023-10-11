@@ -15,6 +15,12 @@ def Post_Analysis(summary, input_args, psf, xtc, outtraj_dirname,  pdb,timestep,
     original_helicity_ave, original_sheet_ave = traj_ss(psf, xtc)
     original_pc = PCA(psf,xtc) 
     original_ete = endtoend(psf,xtc)
+    original_bonds = get_bonds(psf, xtc, atom1_name, atom2_name, every=1, use_atom_type=True)
+    original_angles = get_angles(psf, xtc, atom1_name, atom2_name, atom3_name, every=1, use_atom_type=True)
+    original_dihedrals = get_dihedrals(psf, xtc, atom1_name, atom2_name, atom3_name, atom4_name, every=1, use_atom_type=True)
+    original_bb_imp = get_bb_impropers(psf, xtc, every=1)
+    original_omegas = get_omegas(psf, xtc, every=1)
+    original_phi_psi = get_phis_psis(psf, xtc, every=1)   
 
     # Plot all the above properties
     orgi_fold = f"{outtraj_dirname}/original"
@@ -113,6 +119,12 @@ def Post_Analysis(summary, input_args, psf, xtc, outtraj_dirname,  pdb,timestep,
         helicity_ave, sheet_ave = traj_ss(template_gro, out_xtc)
         pc = PCA(psf,xtc)     
         ete = endtoend(psf,xtc)
+        bonds = get_bonds(template_gro, out_xtc, atom1_name, atom2_name, every=1, use_atom_type=True)  
+        angles = get_angles(template_gro, out_xtc, atom1_name, atom2_name, atom3_name, every=1, use_atom_type=True)
+        dihedrals = get_dihedrals(template_gro, out_xtc, atom1_name, atom2_name, atom3_name, atom4_name, every=1, use_atom_type=True)
+        bb_imp = get_bb_impropers(template_gro, out_xtc, every=1)                                      
+        omegas = get_omegas(template_gro, out_xtc, every=1)                                            
+        phi_psi = get_phis_psis(template_gro, out_xtc, every=1)
         Post_training_analysis_plot(rmsd_matrix, c_alphas, rmsf_matrix, Rgyr, helicity_ave, sheet_ave, new_fold, hype,rmsd_names)
 
         # Test original
