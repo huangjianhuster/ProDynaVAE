@@ -191,6 +191,28 @@ def traj_torsion(psf, xtc):
     return bb_torsion
     pass
 
+# End-to-end distance
+def endtoend(psf,dcd):
+    u = mda.Universe(psf,dcd)  # always start with a Universe
+    nterm = u.select_atoms('protein and name N')[0]  # can access structure via segid (s4AKE) and atom name
+    cterm = u.select_atoms('protein and name C')[-1]  # ... takes the last atom named 'C'
+    bb = u.select_atoms('protein and backbone')  # a selection (a AtomGroup)
+    ete = []
+    frame = []
+    for ts in u.trajectory:  # iterate through all frames
+        r = cterm.position - nterm.position  # end-to-end vector from atom positions
+        d = numpy.linalg.norm(r)   # end-to-end distance
+        frame.append(ts.frame)
+        ete.append(d)
+    return frame, ete
+
+# PCA analysis
+def PCA(psf,dcd):
+    aligner = align.AlignTraj(u, u, select='backbone', in_memory=True).run()
+    pc = pca.PCA(u, select='backbone', align=True, mean=None, n_components=None).run()
+    backbone = u.select_atoms('backbone')
+    n_bb = len(backbone)
+    return pc
 
 # write pdbs into trajectory <-- for VAE decoder-generated trajectory
 def pdbs2xtc(pdblist, out_xtc):

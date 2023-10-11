@@ -13,8 +13,10 @@ def Post_Analysis(summary, input_args, psf, xtc, outtraj_dirname,  pdb,timestep,
     resids, original_rmsf = traj_rmsf(psf, xtc)
     original_rg = traj_rg(psf, xtc)
     original_helicity_ave, original_sheet_ave = traj_ss(psf, xtc)
-    # Plot all the above properties
+    original_pc = PCA(psf,xtc) 
+    original_ete = endtoend(psf,xtc)
 
+    # Plot all the above properties
     orgi_fold = f"{outtraj_dirname}/original"
     if os.path.exists(orgi_fold) == False:
         path = os.path.join(orgi_fold)
@@ -109,6 +111,8 @@ def Post_Analysis(summary, input_args, psf, xtc, outtraj_dirname,  pdb,timestep,
         c_alphas, rmsf_matrix = traj_rmsf(template_gro, out_xtc)
         Rgyr = traj_rg(template_gro, out_xtc)
         helicity_ave, sheet_ave = traj_ss(template_gro, out_xtc)
+        pc = PCA(psf,xtc)     
+        ete = endtoend(psf,xtc)
         Post_training_analysis_plot(rmsd_matrix, c_alphas, rmsf_matrix, Rgyr, helicity_ave, sheet_ave, new_fold, hype,rmsd_names)
 
         # Test original
