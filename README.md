@@ -31,12 +31,16 @@ pdb: Provide path for pdb file of interested protein
 
 datapath: Path of the folder where you want to store the results
 
-early_stopping: True --> If you want the training to stop if the given min_delta( Minimum change in the monitored quantity to qualify as an improvement) in the validation loss is not changing consequetly given number of epoach (patience). FYI (Can provide more values like start_from_epoch,  restore_best_weights, baseline). False --> The run till the last epoch.
+early_stopping: 
+True --> If you want the training to stop if the given min_delta( Minimum change in the monitored quantity to qualify as an improvement) in the validation loss is not changing consequetly given number of epoach (patience). FYI (Can provide more values like start_from_epoch,  restore_best_weights, baseline). 
+False --> The run till the last epoch.
 
 seed: Give random seed in order to reproduce results across different runs.
 
 
-post_analysis: True --> Do all the analysis for training and decoded results sunch as rmsd calculation, rg, PCA, end-to-end distance, etc. False --> Skip the post analysis.
+post_analysis: 
+True --> Do all the analysis for training and decoded results sunch as rmsd calculation, rg, PCA, end-to-end distance, etc. 
+False --> Skip the post analysis.
 
 input_type: such as "cartesian", "calpha", "dihedrals_all", "dihedral_backbone", "contact_map".
 
@@ -62,10 +66,10 @@ RATE: learning rate
 
 # To run json file
 
-Go to scripts directory
+Go to scripts directory: 
 cd scripts
 
-Run
+Run: 
 python make_json.py
 
 This will generate the json file for given protein in the json folder.
