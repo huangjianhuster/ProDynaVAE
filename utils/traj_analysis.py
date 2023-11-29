@@ -6,10 +6,10 @@ import MDAnalysis as mda
 from MDAnalysis.analysis.dihedrals import Dihedral
 import numpy as np
 import matplotlib.pyplot as plt
-
+import parmed as pmd
 
 # get bonds
-def get_bonds(psf, xtc, atom1_name, atom2_name, every=1, use_atom_type=True):
+def get_bonds(psf, xtc, top, atom1_name, atom2_name, every=1, use_atom_type=True):
     """
     psf: PSF
     xtc: XTC
@@ -42,10 +42,13 @@ def get_bonds(psf, xtc, atom1_name, atom2_name, every=1, use_atom_type=True):
                     bond_list.append(bond.value())
 
         all_bonds.append(bond_list)
-    return np.array(all_bonds)
+    gmx_top = pmd.load_file(top)
+    bond_len = next((bond for bond in topology.bonds if bond.atom1.name == atom1_name and bond.atom2.name == atom2_name), None)
+    b0 = equilibrium_length = bond_N_O.type.req
+    return np.array(all_bonds), b0
 
 # get angles
-def get_angles(psf, xtc, atom1_name, atom2_name, atom3_name, every=1, use_atom_type=True):
+def get_angles(psf, xtc, top, atom1_name, atom2_name, atom3_name, every=1, use_atom_type=True):
     """
     psf: PSF
     xtc: XTC
@@ -81,10 +84,13 @@ def get_angles(psf, xtc, atom1_name, atom2_name, atom3_name, every=1, use_atom_t
                     angle_list.append(angle.value())
                 
         all_angles.append(angle_list)
-    return np.array(all_angles)
+    gmx_top = pmd.load_file(top)
+    angle_N_CA_CB = next((angle for angle in gmx_top.angles if angle.atom1.name == atom1_name and angle.atom2.name == atom2_name and angle.atom3.name == atom3_name), None)
+    theta0 = equilibrium_angle = angle_N_CA_CB.type.theteq
+    return np.array(all_angles), theta0
 
 # dihedrals
-def get_dihedrals(psf, xtc, atom1_name, atom2_name, atom3_name, atom4_name, every=1, use_atom_type=True):
+def get_dihedrals(psf, xtc, top, atom1_name, atom2_name, atom3_name, atom4_name, every=1, use_atom_type=True):
     """
     psf: PSF
     xtc: XTC
@@ -123,9 +129,12 @@ def get_dihedrals(psf, xtc, atom1_name, atom2_name, atom3_name, atom4_name, ever
                     dihedral_list.append(dihedral.value())
                 
         all_dihedrals.append(dihedral_list)
-    return np.array(all_dihedrals)
+    gmx_top = pmd.load_file(top)
+    dihedral_N_CA_C_N = next((dihedral for dihedral in gmx_top.dihedrals if dihedral.atom1.name == atom1_name and dihedral.atom2.name == atom2_name and dihedral.atom3.name == atom3_name and dihedral.atom4.name == atom4_name), None)
+    d0 = dihedral_N_CA_C_N.psi_k 
+    return np.array(all_dihedrals), d0
 
-def get_bb_impropers(psf, xtc, every=1):
+def get_bb_impropers(psf, xtc, top, every=1):
     """
     psf: PSF
     xtc: XTC
@@ -149,10 +158,17 @@ def get_bb_impropers(psf, xtc, every=1):
             elif atom1 == 'NH1' and atom2 == 'C' and atom3 == 'CT1' and atom4 == 'H':
                 bbimproper_list.append(bbimproper.value())
         all_bbimpropers.append(bbimproper_list)
-    return np.array(all_bbimpropers)
+
+    gmx_top = pmd.load_file(top)
+    dihedral_imp1 = next((dihedral for dihedral in gmx_top.dihedrals if dihedral.atom1.name == 'C' and dihedral.atom2.name == 'CT1' and dihedral.atom3.name == 'NH1' and dihedral.atom4.name == 'O'), None)
+    dihedral_imp2 = next((dihedral for dihedral in gmx_top.dihedrals if dihedral.atom1.name == 'NH1' and dihedral.atom2.name == 'C' and dihedral.atom3.name == 'CT1' and dihedral.atom4.name == 'H'), None)
+    equilibrium_improper1 = improper_dihedral_imp1.psi_k
+    equilibrium_improper2 = improper_dihedral_imp2.psi_k
+
+    return np.array(all_bbimpropers), [equilibrium_improper1,equilibrium_improper2]
 
 # get peptide plane omegas
-def get_omegas(psf, xtc, every=1):
+def get_omegas(psf, xtc, top, every=1):
     """
     psf: PSF
     xtc: XTC
@@ -162,11 +178,14 @@ def get_omegas(psf, xtc, every=1):
     u = mda.Universe(psf, xtc)
     ags = [res.omega_selection() for res in u.residues[:-1]] # ignore the last residues
     R = Dihedral(ags).run(step=int(every))
-
-    return R.results['angles']
+    
+    gmx_top = pmd.load_file(top)
+    omega = next((dihedral for dihedral in topology.dihedrals if (dihedral.atom1.name == 'C' and dihedral.atom2.name == 'N' and dihedral.atom3.name == 'CA' and dihedral.atom4.name == 'C')), None)
+    omega0 = omega_dihedral_C_N_CA_C.type.phi_k
+    return R.results['angles'], omega0
 
 # get backbone psi and phi angles
-def get_phis_psis(psf, xtc, every=1):
+def get_phis_psis(psf, xtc, top, every=1):
     """
     psf: PSF
     xtc: XTC
@@ -179,7 +198,18 @@ def get_phis_psis(psf, xtc, every=1):
 
     R_phi = Dihedral(ags_phi).run(step=int(every))
     R_psi = Dihedral(ags_psi).run(step=int(every))
-    return R_phi.results['angles'], R_psi.results['angles']
 
-    return R.results['angles']
+    gmx_top = pmd.load_file(top)
+    phi_dihedral_N_CA_C_N = next((dihedral for dihedral in topology.dihedrals if (dihedral.atom1.name == 'N' and dihedral.atom2.name == 'CA' and dihedral.atom3.name == 'C' and dihedral.atom4.name == 'N')), None)
+    phi0 = phi_dihedral_N_CA_C_N.type.phi_k
+    
+    psi_dihedral_CA_C_N_CA = next((dihedral for dihedral in topology.dihedrals if (dihedral.atom1.name == 'CA' and dihedral.atom2.name == 'C' and dihedral.atom3.name == 'N' and dihedral.atom4.name == 'CA')), None)
+    psi0 = psi_dihedral_CA_C_N_CA.type.phi_k
+    return R_phi.results['angles'], phi0, R_psi.results['angles'], psi0
 
+
+def Gaussian_distribution(CV,CVo):
+    kb = 1.86188e3
+    beta = 1/ (1.380649e-23 * 298)
+    expo = beta*0.5*kb*(CV - CVo)
+    return np.exp(-expo)

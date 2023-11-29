@@ -4,7 +4,47 @@ from utils.input_gen import *
 from utils.train_and_eval import *
 import pickle 
 
-def Post_Analysis(summary, input_args, psf, xtc, outtraj_dirname,  pdb,timestep, rmsd_names, rmsd_cal, align_select):
+def Covalent_geo(psf, xtc, top, input_bad):
+    dict_bad = {}
+    dict_bad0 = {}
+    dict_Gaussian_dis = {}    
+    if input_bad['bond']:
+        dict_bad['bond'] = []
+        dict_bad0['bond'] = []
+        for atoms in input_bad['bond']:
+            original_bonds, original_b0 = get_bonds(psf, xtc, top, atoms[1], atoms[2], every=1, use_atom_type=True)
+            dict_bad['bond'].append(original_bonds)
+            dict_bad0['bond'].append(original_b0)
+    elif input_bad['angle']:
+        dict_bad['angle'] = []
+        dict_bad0['angle'] = []
+        for atoms in input_bad['angle']:
+            original_angles, original_a0 = get_angles(psf, xtc, top, atoms[1], atoms[2], atoms[3], every=1, use_atom_type=True)
+            dict_bad['angle'].append(original_angles)
+            dict_bad0['angle'].append(original_a0)
+    elif input_bad['dihedral']:
+        for atoms in input_bad['dihedral']:
+            original_dihedrals, original_di0 = get_dihedrals(psf, xtc, top, atoms[1], atoms[2], atoms[3], atoms[4], every=1, use_atom_type=True)
+            dict_bad['dihedral'] = (original_dihedrals)
+            dict_bad0['dihedral'] = (original_di0)
+    elif input_bad['improper']:
+        original_bb_imp, original_bb_imp0 = get_bb_impropers(psf, xtc, top, every=1)
+        dict_bad['improper'] = (original_bb_imp)
+        dict_bad0['improper'] = (original_bb_imp0)
+    elif input_bad["all_dihedrals"]:
+        original_omegas, original_ome0 = get_omegas(psf, xtc, top, every=1)
+        original_phi, original_phi0, original_psi, original_psi0 = get_phis_psis(psf, xtc, top, every=1)
+        dict_bad['omegas'] = (original_omegas)
+        dict_bad0['omegas'] = (original_ome0)
+        dict_bad['phis'] = (original_phi)
+        dict_bad['psis'] = (original_psi)
+        dict_bad0['phis'] = (original_phi0)
+        dict_bad0['psis'] = (original_psi0)
+
+    return dict_bad, dict_bad0
+
+
+def Post_Analysis(summary, input_bad, cov_names, input_args, psf, xtc, top, outtraj_dirname,  pdb,timestep, rmsd_names, rmsd_cal, align_select):
     """
     To do the analysis of true and decoded trajectory
     Contains: RMSD, RMSF, Radius of gyration, secondary structure, Ramachandran plot
@@ -15,12 +55,8 @@ def Post_Analysis(summary, input_args, psf, xtc, outtraj_dirname,  pdb,timestep,
     original_helicity_ave, original_sheet_ave = traj_ss(psf, xtc)
     original_pc = PCA(psf,xtc) 
     original_ete = endtoend(psf,xtc)
-    original_bonds = get_bonds(psf, xtc, atom1_name, atom2_name, every=1, use_atom_type=True)
-    original_angles = get_angles(psf, xtc, atom1_name, atom2_name, atom3_name, every=1, use_atom_type=True)
-    original_dihedrals = get_dihedrals(psf, xtc, atom1_name, atom2_name, atom3_name, atom4_name, every=1, use_atom_type=True)
-    original_bb_imp = get_bb_impropers(psf, xtc, every=1)
-    original_omegas = get_omegas(psf, xtc, every=1)
-    original_phi_psi = get_phis_psis(psf, xtc, every=1)   
+    original_covalent, original_covalent0 = Covalent_geo(psf, xtc, top, input_bad)
+    original_Gdistribution = Gaussian_distribution(original_covalent, original_covalent0)
 
     # Plot all the above properties
     orgi_fold = f"{outtraj_dirname}/original"
@@ -31,6 +67,8 @@ def Post_Analysis(summary, input_args, psf, xtc, outtraj_dirname,  pdb,timestep,
  
     # Plot RMSD, Pearsons, and Spearmann
     Testing_analysis_plot(summary, outtraj_dirname)
+    post_training_distribution(covalent, cov_names)
+    post_training_Gaussian(Gdistribution,covalent, cov_names)
 
     for model in summary:
         # create dir
@@ -119,14 +157,11 @@ def Post_Analysis(summary, input_args, psf, xtc, outtraj_dirname,  pdb,timestep,
         helicity_ave, sheet_ave = traj_ss(template_gro, out_xtc)
         pc = PCA(psf,xtc)     
         ete = endtoend(psf,xtc)
-        bonds = get_bonds(template_gro, out_xtc, atom1_name, atom2_name, every=1, use_atom_type=True)  
-        angles = get_angles(template_gro, out_xtc, atom1_name, atom2_name, atom3_name, every=1, use_atom_type=True)
-        dihedrals = get_dihedrals(template_gro, out_xtc, atom1_name, atom2_name, atom3_name, atom4_name, every=1, use_atom_type=True)
-        bb_imp = get_bb_impropers(template_gro, out_xtc, every=1)                                      
-        omegas = get_omegas(template_gro, out_xtc, every=1)                                            
-        phi_psi = get_phis_psis(template_gro, out_xtc, every=1)
+        covalent, covalent0 = Covalent_geo(template_gro, out_xtc, top, input_bad)
+        Gdistribution = Gaussian_distribution(covalent, covalent0)
         Post_training_analysis_plot(rmsd_matrix, c_alphas, rmsf_matrix, Rgyr, helicity_ave, sheet_ave, new_fold, hype,rmsd_names)
-
+        post_training_distribution(covalent, cov_names)
+        post_training_Gaussian(Gdistribution,covalent,cov_names)
         # Test original
          
         # Comparision 

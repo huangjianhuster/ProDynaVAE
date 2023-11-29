@@ -126,7 +126,7 @@ def main():
     # generate the PDB file and further analysis
     if post_analysis == True:
         # original trajectory analysis 
-        Post_Analysis(Summary,input_args['input_type'], out_psf, aligned_traj, outtraj_dirname, pdb, input_args['timestep'], input_args['rmsd_names'],input_args['rmsd_cal'],input_args['selection'])
+        Post_Analysis(Summary,input_args['input_bad'], input_args['input_type'], out_psf, aligned_traj, input_args['top'], outtraj_dirname, pdb, input_args['timestep'], input_args['rmsd_names'],input_args['rmsd_cal'],input_args['selection'])
 
     return None
 

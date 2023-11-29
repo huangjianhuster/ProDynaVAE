@@ -180,17 +180,6 @@ def traj_ss(psf, xtc):
     sheet_ave = np.sum(sheet, 0) / sheet.shape[0]
     return  helicity_ave, sheet_ave
 
-# PCA analysis
-def traj_pca(psf, xtc):
-    pass
-
-
-# Torison angles
-def traj_torsion(psf, xtc):
-
-    return bb_torsion
-    pass
-
 # End-to-end distance
 def endtoend(psf,dcd):
     u = mda.Universe(psf,dcd)  # always start with a Universe

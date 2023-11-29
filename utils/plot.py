@@ -541,3 +541,64 @@ def plot_distribution(array_data, bins=100):
     # ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     ax.grid()
     plt.show()
+    return None
+
+# Plot the distributions of all the covalent
+def post_training_distribution(covalent, cov_names, bins=100):
+    for c, n in zip(covalent, cov_names):
+        plt.cla()
+        plt.clf()
+        data = c.flatten()
+        fig, ax = plt.subplots(figsize=(10, 6))
+        n, bins, patches = ax.hist(data, bins, density=True, alpha=0.75, color='green', edgecolor='gray')
+        # ax.grid(which='major', color='#DDDDDD', linewidth=0.8)
+        # ax.set_ylim([0, 1])
+        ax.set_xlabel("CV", fontsize=16)
+        ax.set_ylabel("Probability", fontsize=16)
+        ax.tick_params(axis='both', which='major', length=10, labelsize=16)
+        # ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        # ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+        ax.grid()
+        plt.savefig(f"CV{n}.png")
+        plt.show()
+
+
+# Plot Gaussian distribution
+def plot_Gaussion(x,y):
+    data = x.flatten()
+    bin_number=100
+    
+    fig, ax = plt.subplots(figsize=(8, 8))
+    n, bins, patches = ax.hist(data, bin_number, density=True, alpha=0.75, color='green', edgecolor='gray')
+    ax.plot(x, y/(x[1] - x[0]), 'r--')
+    # ax.grid(which='major', color='#DDDDDD', linewidth=0.8)
+    # ax.set_ylim([0, 1])
+    ax.set_xlabel("CV", fontsize=16)
+    ax.set_ylabel("Probability", fontsize=16)
+    ax.tick_params(axis='both', which='major', length=10, labelsize=16)
+    # ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    # ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    plt.show()
+    return None
+
+
+# Plot the Gaussian distributions of all the covalent
+def post_training_Gaussian(y, x, cov_names):
+    for g, c, n in zip(y,x, cov_names):
+        data = x.flatten()
+
+        bin_number=100
+        plt.cla()
+        plt.clf()
+        fig, ax = plt.subplots(figsize=(8, 8))
+        n, bins, patches = ax.hist(data, bin_number, density=True, alpha=0.75, color='green', edgecolor='gray')
+        ax.plot(x, y/(x[1] - x[0]), 'r--')
+        ax.set_xlabel("CV", fontsize=16)
+        ax.set_ylabel("Probability", fontsize=16)
+        ax.tick_params(axis='both', which='major', length=10, labelsize=16)
+        plt.show()
+    return None
+
+
+
+
