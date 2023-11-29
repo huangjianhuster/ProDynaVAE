@@ -20,7 +20,7 @@ import os
 from tensorflow import random
 import json 
 
-def get_input(psf, traj, input_type="cartesian"):
+def get_input(psf, pdb, traj, split, input_type="cartesian"):
     if input_type == "dihedral_all":
         Ec, bonds, angles, dihedrals, R = get_ic(psf, traj)
         scaler, test, train = scaling_spliting_dihedrals(dihedrals)
@@ -39,17 +39,17 @@ def get_input(psf, traj, input_type="cartesian"):
     elif input_type == "cartesian":
         R = None
         coordinates = get_xyz(pdb, traj)
-        scaler, test, train = scaling_spliting_cartesian(coordinates, input_args['split'])
+        scaler, test, train = scaling_spliting_cartesian(coordinates, split)
 
     elif input_type == "calpha":
         R = None
         coordinates = get_cxyz(pdb, traj)
-        scaler, test, train = scaling_spliting_cartesian(coordinates , input_args['split'])
+        scaler, test, train = scaling_spliting_cartesian(coordinates , split)
 
     elif input_type == "contact_map":
         R = None
         contact_map = get_contact_map(psf, traj)
-        scaler, test, train = scaling_spliting_contact_map(contact_map, input_args['split'])
+        scaler, test, train = scaling_spliting_contact_map(contact_map, split)
     
     return scaler, test, train
 
@@ -84,7 +84,7 @@ def main():
         os.mkdir(path)
     
     # generate input array
-    scaler, test, train = get_input(psf, traj, input_type=input_args['input_type'])
+    scaler, test, train = get_input(psf, traj, input_args['split'], input_type=input_args['input_type'])
 
     # VAE model traning
     Summary = []

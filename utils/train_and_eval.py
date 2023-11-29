@@ -242,6 +242,26 @@ def PDB_to_XTC(pickle_file, template_file, output_xtc,time_s):
     os.system("rm %s" % xtc_tmp)
     return None
 
+def demap_to_xtc(psf, demap, remove_selection, out_xtc):
+    u = mda.Universe(psf)
+    nonH_atoms = u.select_atoms(remove_selection)   # example: "not name H*"
+
+    num_frames = demap.shape[0]
+
+    nonH = mda.Merge(nonH_atoms)
+    nonH.load_new(demap[0].reshape((len(nonH_atoms), 3)))
+    nonH.select_atoms("all").write("noH.pdb")
+
+    with mda.Writer(out_xtc, len(nonH.atoms)) as xtc_writer:
+        for frame in range(num_frames):
+            nonH.load_new(demap[frame].reshape((len(nonH_atoms), 3)))
+            nonH.trajectory.ts.data['dt'] = 1
+            nonH.trajectory.ts.data['time'] = frame
+            nonH.trajectory.ts.data['step'] = frame
+            xtc_writer.write(nonH.atoms)
+
+    return None
+
 
 # Decoded xyz coordinates to Protein
 def extract_template(pdb_file):
