@@ -1,4 +1,5 @@
 from utils.traj_process import *
+from utils.traj_analysis import *
 from utils.plot import *
 from utils.input_gen import *
 from utils.train_and_eval import *
