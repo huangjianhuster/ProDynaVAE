@@ -252,6 +252,10 @@ def demap_to_xtc(psf, demap, remove_selection, out_xtc):
     nonH.load_new(demap[0].reshape((len(nonH_atoms), 3)))
     nonH.select_atoms("all").write("noH.pdb")
 
+    # make sure dir has been made
+    if not os.path.exits(os.path.dirname(out_xtc)):
+        os.makedirs(os.path.dirname(out_xtc), exist_ok=True)
+
     with mda.Writer(out_xtc, len(nonH.atoms)) as xtc_writer:
         for frame in range(num_frames):
             nonH.load_new(demap[frame].reshape((len(nonH_atoms), 3)))
