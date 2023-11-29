@@ -20,6 +20,38 @@ import os
 from tensorflow import random
 import json 
 
+def get_input(psf, traj, input_type="cartesian"):
+    if input_type == "dihedral_all":
+        Ec, bonds, angles, dihedrals, R = get_ic(psf, traj)
+        scaler, test, train = scaling_spliting_dihedrals(dihedrals)
+        
+    elif input_type == "dihedral_backbone":
+        original = "original"
+        R =  None
+        phi, psi = get_bbtorsion(psf, traj)
+        dihedrals = np.concatenate((phi,psi),axis=1)
+        dihedrals = dihedrals*(np.pi/180)
+        # Ramachandran_plot_trj(psf, traj, outtraj_dirname)
+        scaler, test, train = scaling_spliting_dihedrals(dihedrals)
+        # phi_plot(phi, outtraj_dirname, original)
+        # psi_plot(psi, outtraj_dirname, original)
+
+    elif input_type == "cartesian":
+        R = None
+        coordinates = get_xyz(pdb, traj)
+        scaler, test, train = scaling_spliting_cartesian(coordinates, input_args['split'])
+
+    elif input_type == "calpha":
+        R = None
+        coordinates = get_cxyz(pdb, traj)
+        scaler, test, train = scaling_spliting_cartesian(coordinates , input_args['split'])
+
+    elif input_type == "contact_map":
+        R = None
+        contact_map = get_contact_map(psf, traj)
+        scaler, test, train = scaling_spliting_contact_map(contact_map, input_args['split'])
+    
+    return scaler, test, train
 
 def main():
     # parse user-defined variables
@@ -28,21 +60,14 @@ def main():
     args = parser.parse_args()
     
     # arguments and use absolute path
+    # load parameters
     with open(args.input, 'r') as f:
         input_args = json.load(f)
-
-
-    seed = input_args['seed'] 
+    seed = input_args['seed']   # random seed
     data_path = input_args['datapath']
-#    traj = os.path.join(data_path, input_args['trj'])
-#    psf = os.path.join(data_path, input_args['psf'])
-#    pdb = os.path.join(data_path, input_args['pdb'])
-
     traj = input_args['trj']
     psf = input_args['psf']
     pdb = input_args['pdb']
-
-    
     hyperparams_dict = {'BATCH_SIZE': input_args['BATCH_SIZE'], # give a 'list' type
                         'LATENT_DIM': input_args['LATENT_DIM'], #  give a 'list' type
                         'NUM_HIDDEN_LAYER': input_args['NUM_HIDDEN_LAYER'], # give a 'list' type
@@ -50,70 +75,29 @@ def main():
                         'RATE': input_args['RATE'], # give a 'list' type
                         }
     hyperparams_combinations = gen_parms_combinations(**hyperparams_dict)
-
     random.set_seed(seed)
-    # extract protein from raw trajectory
-#    out_psf, out_traj = extract_pro(psf, traj)
-#    outtraj_basename = os.path.basename(out_traj)
-    out_psf = psf
-    outtraj_dirname = data_path
 
-    aligned_traj = traj
-#    if os.path.isfile(aligned_traj) == False:
-#        traj_align_onfly(out_psf, out_traj, aligned_traj)
-    outtraj_dir = outtraj_dirname
-    outtraj_dirname = f"{outtraj_dir}{input_args['input_type']}"
+    # make dir for decoder-generated trajectories
+    outtraj_dirname = f"{data_path}/{input_args['input_type']}"
     if os.path.exists(outtraj_dirname) == False:
         path = os.path.join(outtraj_dirname)
         os.mkdir(path)
+    
     # generate input array
-
-    if input_args['input_type'] == "dihedral_all":
-        Ec, bonds, angles, dihedrals, R = get_ic(out_psf, aligned_traj)
-        scaler, test, train = scaling_spliting_dihedrals(dihedrals)
-        
-    elif input_args['input_type'] == "dihedral_backbone":
-        original = "original"
-        R =  None
-        phi, psi = get_bbtorsion(psf, traj)
-        dihedrals = np.concatenate((phi,psi),axis=1)
-        dihedrals = dihedrals*(np.pi/180)
-        Ramachandran_plot_trj(psf, traj, outtraj_dirname)
-        scaler, test, train = scaling_spliting_dihedrals(dihedrals)
-#        phi_plot(phi, outtraj_dirname, original)
-#        psi_plot(psi, outtraj_dirname, original)
-
-    elif input_args['input_type'] == "cartesian":
-        R = None
-        coordinates = get_xyz(pdb, aligned_traj)
-        scaler, test, train = scaling_spliting_cartesian(coordinates, input_args['split'])
-
-    elif input_args['input_type'] == "calpha":
-        R = None
-        coordinates = get_cxyz(pdb, aligned_traj)
-        scaler, test, train = scaling_spliting_cartesian(coordinates , input_args['split'])
-
-    elif input_args['input_type'] == "contact_map":
-        R = None
-        contact_map = get_contact_map(out_psf, aligned_traj)
-        scaler, test, train = scaling_spliting_contact_map(contact_map, input_args['split'])
-
-    # additional params
-    early_stopping = input_args['early_stopping']
-    post_analysis = input_args['post_analysis']
+    scaler, test, train = get_input(psf, traj, input_type=input_args['input_type'])
 
     # VAE model traning
     Summary = []
     for hyperparams_dict in hyperparams_combinations:
-
-        # create train input parameters dict
+        # create train input parameters dict for the "training" function
         training_input = hyperparams_dict.copy()
+        # load other training details: training data, testing data
         training_input['scaler'] = scaler
         training_input['x_train'] = train
         training_input['x_test'] = test
         training_input['split'] = input_args['split']
-        training_input['early_stopping'] = early_stopping
-        training_input['seed'] = seed
+        training_input['early_stopping'] = input_args['early_stopping']
+        training_input['seed'] = input_args['seed']
         training_input['outtraj_dirname'] = outtraj_dirname
         # VAE model evaluation
         return_dict = training(**training_input)
@@ -124,10 +108,12 @@ def main():
     pickle.dump(Summary, open(f"{outtraj_dirname}/summary.pkl", "wb"))
 
     # generate the PDB file and further analysis
-    if post_analysis == True:
+    if input_args['post_analysis'] == True:
         # original trajectory analysis 
-        Post_Analysis(Summary,input_args['input_bad'], input_args['input_type'], out_psf, aligned_traj, input_args['top'], outtraj_dirname, pdb, input_args['timestep'], input_args['rmsd_names'],input_args['rmsd_cal'],input_args['selection'])
-
+        # Post_Analysis(Summary,input_args['input_bad'], input_args['input_type'], psf, traj, input_args['top'], outtraj_dirname, pdb, input_args['timestep'], input_args['rmsd_names'],input_args['rmsd_cal'],input_args['selection'])
+        pass
+    print("job finished")
     return None
 
-main()
+if __name__ == "__main__":
+    main()
