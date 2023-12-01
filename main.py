@@ -21,37 +21,39 @@ from tensorflow import random
 import json 
 
 def get_input(psf, pdb, traj, split, input_type="cartesian"):
+    """
+        -- Convert trajectory into input for VAE model
+    """
+    R = None
     if input_type == "dihedral_all":
+        remove_selection = None
         Ec, bonds, angles, dihedrals, R = get_ic(psf, traj)
         scaler, test, train = scaling_spliting_dihedrals(dihedrals)
         
     elif input_type == "dihedral_backbone":
+        remove_selection = None
         original = "original"
-        R =  None
         phi, psi = get_bbtorsion(psf, traj)
         dihedrals = np.concatenate((phi,psi),axis=1)
         dihedrals = dihedrals*(np.pi/180)
-        # Ramachandran_plot_trj(psf, traj, outtraj_dirname)
         scaler, test, train = scaling_spliting_dihedrals(dihedrals)
-        # phi_plot(phi, outtraj_dirname, original)
-        # psi_plot(psi, outtraj_dirname, original)
 
     elif input_type == "cartesian":
-        R = None
+        remove_selection = "not name H*"
         coordinates = get_xyz(pdb, traj)
         scaler, test, train = scaling_spliting_cartesian(coordinates, split)
 
     elif input_type == "calpha":
-        R = None
+        remove_selection = "name CA and not protein"
         coordinates = get_cxyz(pdb, traj)
         scaler, test, train = scaling_spliting_cartesian(coordinates , split)
 
     elif input_type == "contact_map":
-        R = None
+        remove_selection = None
         contact_map = get_contact_map(psf, traj)
         scaler, test, train = scaling_spliting_contact_map(contact_map, split)
     
-    return scaler, test, train
+    return scaler, test, train, R, remove_selection
 
 def main():
     # parse user-defined variables
@@ -84,7 +86,10 @@ def main():
         os.mkdir(path)
     
     # generate input array
-    scaler, test, train = get_input(psf, traj, input_args['split'], input_type=input_args['input_type'])
+    scaler, test, train, R, remove_selection = get_input(psf, traj, input_args['split'], input_type=input_args['input_type'])
+    # add argument to save the train, validation, test
+    picle.dump(test, open(f"{outtraj_dirname}_test_{seed}.pkl", "wb"))
+    picle.dump(train, open(f"{outtraj_dirname}_train_{seed}.pkl", "wb"))
 
     # VAE model traning
     Summary = []
@@ -103,14 +108,19 @@ def main():
         return_dict = training(**training_input)
         # generate decoder xtc files
         demap_to_xtc(psf, return_dict['demap'], remove_selection, f"{outtraj_dirname}/{return_dict['hyper_together']}/decoder.xtc")
-        # dict to store RMSD and correlation;
         Summary.append(return_dict)
+        # dict to store RMSD and correlation;
+        del return_dict['outtraj_dirname']
+        del return_dict['demap']
+        del return_dict['hyper_together']
+        Save_summary.append(return_dict)
 
     # Save Dictionary
-    pickle.dump(Summary, open(f"{outtraj_dirname}/summary.pkl", "wb"))
+    Save_summary.to_csv(f"{outtraj_dirname}/summary.pkl",index=False)
 
     # generate the PDB file and further analysis
     if input_args['post_analysis'] == True:
+        
         # original trajectory analysis 
         # Post_Analysis(Summary,input_args['input_bad'], input_args['input_type'], psf, traj, input_args['top'], outtraj_dirname, pdb, input_args['timestep'], input_args['rmsd_names'],input_args['rmsd_cal'],input_args['selection'])
         pass

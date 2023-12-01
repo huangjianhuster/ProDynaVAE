@@ -105,12 +105,10 @@ def training(**kwargs):
     return_dict['EPOCHS'] = EPOCHS
     return_dict['RATE'] = RATE
 
-    return_dict['test'] = x_test
-    return_dict['train'] = x_train
     return_dict['Spearmann'] = Spearmann
     return_dict['Pearson'] = Pearson 
-    return_dict['pv_spearman'] = pv_spearman
-    return_dict['pv_pearson'] = pv_pearson
+    return_dict['val_spearman'] = pv_spearman
+    return_dict['val_pearson'] = pv_pearson
     return_dict['RMSD_mean'] = RMSD_mean
     return_dict['RMSD_std'] = RMSD_std
     return_dict['demap'] = demap
