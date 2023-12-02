@@ -117,7 +117,7 @@ def main():
     # Save Dictionary
     result_df = pd.DataFrame(Summary)
     result_df.to_csv(f"{outtraj_dirname}/{input_args['input_type']}/summary.csv", \
-                     index=False, float_format='%.4f')
+                     index=False, float_format='%.6f')
 
     # generate the PDB file and further analysis
     if input_args['post_analysis'] == True:
