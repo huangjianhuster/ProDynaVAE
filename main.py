@@ -117,7 +117,7 @@ def main():
         Save_summary.append(return_dict)
 
     # Save Dictionary
-    Save_summary.to_csv(f"{outtraj_dirname}/summary.pkl",index=False)
+    Save_summary.to_csv(f"{outtraj_dirname}/summary.csv", index=False)
 
     # generate the PDB file and further analysis
     if input_args['post_analysis'] == True:
