@@ -84,10 +84,10 @@ def main():
         os.mkdir(path)
     
     # generate input array
-    scaler, test, train, R, remove_selection = get_input(psf, traj, input_args['split'], input_type=input_args['input_type'])
+    scaler, test, train, R, remove_selection = get_input(psf, pdb, traj, input_args['split'], input_type=input_args['input_type'])
     # add argument to save the train, validation, test
-    pickle.dump(test, open(f"{outtraj_dirname}/{input_args['input_type']}/test_dataset_{seed}.pkl", "wb"))
-    pickle.dump(train, open(f"{outtraj_dirname}/{input_args['input_type']}/train_dataset_{seed}.pkl", "wb"))
+    pickle.dump(test, open(f"{outtraj_dirname}/test_dataset_{seed}.pkl", "wb"))
+    pickle.dump(train, open(f"{outtraj_dirname}/train_dataset_{seed}.pkl", "wb"))
 
     # VAE model traning
     Summary = []
@@ -105,18 +105,16 @@ def main():
         # VAE model evaluation
         return_dict = training(**training_input)
         # generate decoder xtc files
-        demap_to_xtc(psf, return_dict['demap'], remove_selection, f"{outtraj_dirname}/{return_dict['hyper_together']}/decoder.xtc")
+        demap_to_xtc(psf, return_dict['demap'], remove_selection, f"{outtraj_dirname}/{return_dict['hyper_together']}")
         # dict to store RMSD and correlation;
         del return_dict['outtraj_dirname']
         del return_dict['demap']
         del return_dict['hyper_together']
-        del return_dict['train']
-        del return_dict['test']
         Summary.append(return_dict)
 
     # Save Dictionary
     result_df = pd.DataFrame(Summary)
-    result_df.to_csv(f"{outtraj_dirname}/{input_args['input_type']}/summary.csv", \
+    result_df.to_csv(f"{outtraj_dirname}/summary.csv", \
                      index=False, float_format='%.6f')
 
     # generate the PDB file and further analysis
