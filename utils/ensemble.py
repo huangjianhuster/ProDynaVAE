@@ -178,6 +178,10 @@ class Ensemble:
     def get_dihedral_eq(self, atom1_type, atom2_type, atom3_type, atom4_type):
         r_eq = self.dihedral_types[(atom1_type, atom2_type, atom3_type, atom4_type)]
         return r_eq
+    
+    def get_improper_eq(self, atom1_type, atom2_type, atom3_type, atom4_type):
+        r_eq = self.improper_types[(atom1_type, atom2_type, atom3_type, atom4_type)]
+        return r_eq
         
     def get_bonds(self, atom1_type, atom2_type, n_threads=None):
         """
@@ -257,28 +261,85 @@ class Ensemble:
     # MDAnalysis provides us with Dihedral module:
     # https://docs.mdanalysis.org/1.1.0/documentation_pages/analysis/dihedrals.html
     def get_phi(self, res_selection=None):
-        r = self.universe.select_atoms(f"protein and resid {res_selection}")    # res_selection = "5-10"
+        """
+        by default, the first residue has no phi;
+        All residue phi angles will be calculated if res_selection is not given.
+            res_selection: (could be str) "5-10" means residue index from 5 to 10 will be calculated.
+        """
+        if res_selection:
+            selection = f"protein and resid {res_selection}"
+        else:
+            selection = "protein"    # res_selection = "5-10"
+        r = self.universe.select_atoms(selection) 
         ags = [res.phi_selection() for res in r.residues]
         R = Dihedral(ags).run()
         return R.results.angles
 
     def get_psi(self, res_selection=None):
-        r = self.universe.select_atoms(f"protein and resid {res_selection}")    # res_selection = "5-10"
+        """
+        by default, the last residue has no psi;
+        All residue psi angles will be calculated if res_selection is not given.
+            res_selection: (could be str) "5-10" means residue index from 5 to 10 will be calculated.
+        """
+        if res_selection:
+            selection = f"protein and resid {res_selection}"
+        else:
+            selection = "protein"    # res_selection = "5-10"
+        r = self.universe.select_atoms(selection)    
         ags = [res.psi_selection() for res in r.residues]
         R = Dihedral(ags).run()
         return R.results.angles
 
     def get_omega(self, res_selection=None):
-        r = self.universe.select_atoms(f"protein and resid {res_selection}")    # res_selection = "5-10"
+        """
+        All residue omega angles will be calculated if res_selection is not given.
+            res_selection: (could be str) "5-10" means residue index from 5 to 10 will be calculated.
+        """
+        if res_selection:
+            selection = f"protein and resid {res_selection}"
+        else:
+            selection = "protein"    # res_selection = "5-10"
+        r = self.universe.select_atoms(selection) 
         ags = [res.omega_selection() for res in r.residues]
         R = Dihedral(ags).run()
         return R.results.angles
 
     def get_chi1(self, res_selection=None):
-        r = self.universe.select_atoms(f"protein and resid {res_selection}")    # res_selection = "5-10"
+        """
+        All residue chi1 angles will be calculated if res_selection is not given.
+            res_selection: (could be str) "5-10" means residue index from 5 to 10 will be calculated.
+        """
+        if res_selection:
+            selection = f"protein and resid {res_selection}"
+        else:
+            selection = "protein"    # res_selection = "5-10"
+        r = self.universe.select_atoms(selection) 
         ags = [res.chi1_selection() for res in r.residues]
         R = Dihedral(ags).run()
         return R.results.angles
+    
+    def get_bb_impropers(self, res_selection=None, n_threads=None):
+        """
+        All residue backbone improper dihedrals will be calculated if res_selection is not given.
+            res_selection: (could be str) "5-10" means residue index from 5 to 10 will be calculated.
+        """
+        if res_selection:
+            selection = f"protein and resid {res_selection}"
+        else:
+            selection = "protein"    # res_selection = "5-10"
+
+        run_per_frame = partial(bb_impropers_per_frame,
+                        atomgroup=self.universe.select_atoms(selection))
+        
+        if n_threads:
+            self.available_threads = self.get_available_threads()
+        else:
+            self.available_threads = n_threads
+        
+        with Pool(self.available_threads) as worker_pool:
+            result = worker_pool.map(run_per_frame, np.arange(self.n_frames))
+        impropers = np.asarray(result)
+        return impropers
 
 
 # from MDanalysis: https://userguide.mdanalysis.org/stable/examples/analysis/custom_parallel_analysis.html
@@ -376,6 +437,23 @@ def dihedrals_per_frame(frame_index, atomgroup, atom1_type, atom2_type, atom3_ty
                   and dihedral.atoms[2].type == atom3_type and dihedral.atoms[3].type == atom4_type)]
     return np.array(dihedral)
 
+def bb_impropers_per_frame(frame_index, atomgroup):
+    """
+    atomgroup: atomgroup from MDAnalysis
+    return: dihedral array (unit: degree)
+
+    backbone dihedrals: (two for each residue)
+        C CA N O
+        N C CA H
+    """
+    atomgroup.universe.trajectory[frame_index]
+    bb_impropers = [ improper.value() for improper in atomgroup.impropers if \
+                 (improper.atoms[0].type == "C" and improper.atoms[1].type == "CT1" and \
+                  improper.atoms[2].type == "NH1" and improper.atoms[3].type == "O") or \
+                  (improper.atoms[0].type == "NH1" and improper.atoms[1].type == "C" and \
+                  improper.atoms[2].type == "CT1" and improper.atoms[3].type == "H") \
+                    ]
+    return bb_impropers
 
     
 
@@ -401,7 +479,7 @@ if __name__ == "__main__":
     # ensemble_test.rg()
     # print(ensemble_test.rg)
 
-    # SS
+    # SS: this could be slow...
     # second = ensemble_test.get_ss()
 
     # get resid and requence
@@ -425,8 +503,23 @@ if __name__ == "__main__":
     # print(angles.shape)
 
     # dihedrals
-    dihedrals = ensemble_test.get_dihedrals(atom1_type='C', atom2_type='NH1', atom3_type='CT1', atom4_type="C")
-    print(dihedrals)
-    print(dihedrals.shape)
+    # dihedrals = ensemble_test.get_dihedrals(atom1_type='C', atom2_type='NH1', atom3_type='CT1', atom4_type="C")
+    # print(dihedrals)
+    # print(dihedrals.shape)
 
+    # get psi, phi and omega
+    # psis = ensemble_test.get_psi(res_selection="5-10")
+    # print("psis: ", psis)
+    # print(psis.shape)
+    # phis = ensemble_test.get_phi(res_selection="5-10")
+    # print("phis: ", psis)
+    # print(phis.shape)
+    # omegas = ensemble_test.get_omega(res_selection="5-10")
+    # print("omegas: ", psis)
+    # print(omegas.shape)
+
+    # get impropers
+    impropers = ensemble_test.get_bb_impropers(res_selection="5-10")
+    print(impropers)
+    print(impropers.shape)
 
