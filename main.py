@@ -88,11 +88,12 @@ def main():
     # generate input array
     scaler, test, train, R, remove_selection = get_input(psf, traj, input_args['split'], input_type=input_args['input_type'])
     # add argument to save the train, validation, test
-    picle.dump(test, open(f"{outtraj_dirname}_test_{seed}.pkl", "wb"))
-    picle.dump(train, open(f"{outtraj_dirname}_train_{seed}.pkl", "wb"))
+    pickle.dump(test, open(f"{outtraj_dirname}_test_{seed}.pkl", "wb"))
+    pickle.dump(train, open(f"{outtraj_dirname}_train_{seed}.pkl", "wb"))
 
     # VAE model traning
     Summary = []
+    Save_summary = []
     for hyperparams_dict in hyperparams_combinations:
         # create train input parameters dict for the "training" function
         training_input = hyperparams_dict.copy()
