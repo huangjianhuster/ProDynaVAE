@@ -9,11 +9,9 @@
 # MDAnalysis
 # MDTraj
 
-from utils.traj_process import *
-from utils.plot import *
 from utils.input_gen import *
 from utils.train_and_eval import *
-from utils.post_analysis import *
+import pandas as pd
 import argparse
 import sys
 import os
@@ -44,7 +42,7 @@ def get_input(psf, pdb, traj, split, input_type="cartesian"):
         scaler, test, train = scaling_spliting_cartesian(coordinates, split)
 
     elif input_type == "calpha":
-        remove_selection = "name CA and not protein"
+        remove_selection = "not (name CA and protein)"
         coordinates = get_cxyz(pdb, traj)
         scaler, test, train = scaling_spliting_cartesian(coordinates , split)
 
@@ -88,12 +86,11 @@ def main():
     # generate input array
     scaler, test, train, R, remove_selection = get_input(psf, traj, input_args['split'], input_type=input_args['input_type'])
     # add argument to save the train, validation, test
-    pickle.dump(test, open(f"{outtraj_dirname}_test_{seed}.pkl", "wb"))
-    pickle.dump(train, open(f"{outtraj_dirname}_train_{seed}.pkl", "wb"))
+    pickle.dump(test, open(f"{outtraj_dirname}/{input_args['input_type']}/test_dataset_{seed}.pkl", "wb"))
+    pickle.dump(train, open(f"{outtraj_dirname}/{input_args['input_type']}/train_dataset_{seed}.pkl", "wb"))
 
     # VAE model traning
     Summary = []
-    Save_summary = []
     for hyperparams_dict in hyperparams_combinations:
         # create train input parameters dict for the "training" function
         training_input = hyperparams_dict.copy()
@@ -109,19 +106,21 @@ def main():
         return_dict = training(**training_input)
         # generate decoder xtc files
         demap_to_xtc(psf, return_dict['demap'], remove_selection, f"{outtraj_dirname}/{return_dict['hyper_together']}/decoder.xtc")
-        Summary.append(return_dict)
         # dict to store RMSD and correlation;
         del return_dict['outtraj_dirname']
         del return_dict['demap']
         del return_dict['hyper_together']
-        Save_summary.append(return_dict)
+        del return_dict['train']
+        del return_dict['test']
+        Summary.append(return_dict)
 
     # Save Dictionary
-    Save_summary.to_csv(f"{outtraj_dirname}/summary.csv", index=False)
+    result_df = pd.DataFrame(Summary)
+    result_df.to_csv(f"{outtraj_dirname}/{input_args['input_type']}/summary.csv", \
+                     index=False, float_format='%.4f')
 
     # generate the PDB file and further analysis
     if input_args['post_analysis'] == True:
-        
         # original trajectory analysis 
         # Post_Analysis(Summary,input_args['input_bad'], input_args['input_type'], psf, traj, input_args['top'], outtraj_dirname, pdb, input_args['timestep'], input_args['rmsd_names'],input_args['rmsd_cal'],input_args['selection'])
         pass
