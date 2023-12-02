@@ -245,16 +245,14 @@ def demap_to_xtc(psf, demap, remove_selection, out_xtc):
     nonH_atoms = u.select_atoms(remove_selection)   # example: "not name H*"
 
     num_frames = demap.shape[0]
-
-    nonH = mda.Merge(nonH_atoms)
-    nonH.load_new(demap[0].reshape((len(nonH_atoms), 3)))
-    nonH.select_atoms("all").write("noH.pdb")
-
+    
     # make sure dir has been made
     if os.path.exists(out_xtc) == False:
         os.mkdir(out_xtc)
-#    if not os.path.exits(os.path.dirname(out_xtc)):
-#        os.makedirs(os.path.dirname(out_xtc), exist_ok=True)
+
+    nonH = mda.Merge(nonH_atoms)
+    nonH.load_new(demap[0].reshape((len(nonH_atoms), 3)))
+    nonH.select_atoms("all").write(f"{out_xtc}/noH.pdb")
 
     with mda.Writer(f"{out_xtc}/decoder.xtc", len(nonH.atoms)) as xtc_writer:
         for frame in range(num_frames):

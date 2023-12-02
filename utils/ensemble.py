@@ -56,7 +56,7 @@ class Ensemble:
         """Filter atoms based on a selection string."""
         self.atoms = self.universe.select_atoms(atom_selection)
 
-    def rmsd(self, align_select, rmsd_list):
+    def get_rmsd(self, align_select, rmsd_list):
         """
         align_select: (str), selection syntax in mdanalysis for the alignment
         rmsd_list: (list), selections for different parts 
@@ -71,7 +71,7 @@ class Ensemble:
         R.run()
         return R.results.rmsd.T
     
-    def rmsf(self):
+    def get_rmsf(self):
         """
         RMSF calculaton (default: C-alpha atoms)
         return residue_index_array, rmsf_array
@@ -81,7 +81,7 @@ class Ensemble:
         rmsf_array = R.results.rmsf
         return c_alphas.resnums, rmsf_array
         
-    def rg(self, n_threads=None):
+    def get_rg(self, n_threads=None):
         """
         return Rgyr # [[RG_whole, RG_x, RG_y, RG_z]]
         """
@@ -125,7 +125,7 @@ class Ensemble:
         helicity_ave = np.sum(helicity, 0) / helicity.shape[0]
         sheet = np.where(dssp=='E', 1, 0)
         sheet_ave = np.sum(sheet, 0) / sheet.shape[0]
-        return  helicity_ave, sheet_ave
+        return  {"helix": helicity_ave, "sheet": sheet_ave}
     
     def get_end2end(self, n_threads=None):
         run_per_frame = partial(end2end_per_frame,
@@ -140,7 +140,7 @@ class Ensemble:
         end2end = np.asarray(result)
         return end2end
     
-    def pca(self, selection, n_components=None):
+    def pca(self, selection="protein and backbone", n_components=None):
         """
         selection: selection syntax str in MDAnalysis
         n_compnents: int; project coordinates in a reduced dimension
@@ -151,7 +151,7 @@ class Ensemble:
         # ref: https://userguide.mdanalysis.org/stable/examples/analysis/reduced_dimensions/pca.html
         (using "selection" as the alignment and also output only the "selection" atoms)
         """
-        pc = pca.PCA(self.universe, select='backbone', align=True, mean=None, n_components=None).run()
+        pc = pca.PCA(self.universe, select=selection, align=True, mean=None, n_components=None).run()
         if n_components:
             return pc.results
         else:
@@ -271,7 +271,7 @@ class Ensemble:
         else:
             selection = "protein"    # res_selection = "5-10"
         r = self.universe.select_atoms(selection) 
-        ags = [res.phi_selection() for res in r.residues]
+        ags = [res.phi_selection() for res in r.residues[1:]]
         R = Dihedral(ags).run()
         return R.results.angles
 
@@ -286,12 +286,13 @@ class Ensemble:
         else:
             selection = "protein"    # res_selection = "5-10"
         r = self.universe.select_atoms(selection)    
-        ags = [res.psi_selection() for res in r.residues]
+        ags = [res.psi_selection() for res in r.residues[:-1]]
         R = Dihedral(ags).run()
         return R.results.angles
 
     def get_omega(self, res_selection=None):
         """
+        by default, the last residue has no psi;
         All residue omega angles will be calculated if res_selection is not given.
             res_selection: (could be str) "5-10" means residue index from 5 to 10 will be calculated.
         """
@@ -300,7 +301,7 @@ class Ensemble:
         else:
             selection = "protein"    # res_selection = "5-10"
         r = self.universe.select_atoms(selection) 
-        ags = [res.omega_selection() for res in r.residues]
+        ags = [res.omega_selection() for res in r.residues[:-1]]
         R = Dihedral(ags).run()
         return R.results.angles
 
@@ -310,9 +311,9 @@ class Ensemble:
             res_selection: (could be str) "5-10" means residue index from 5 to 10 will be calculated.
         """
         if res_selection:
-            selection = f"protein and resid {res_selection}"
+            selection = f"protein and resid {res_selection} and not (resname GLY ALA)"
         else:
-            selection = "protein"    # res_selection = "5-10"
+            selection = "protein and not (resname GLY ALA)"    # res_selection = "5-10"
         r = self.universe.select_atoms(selection) 
         ags = [res.chi1_selection() for res in r.residues]
         R = Dihedral(ags).run()
