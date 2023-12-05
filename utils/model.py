@@ -147,14 +147,13 @@ def build_vae(original_dim, latent_dim=2, num_of_hidden_layer=4, rate=0.0001):
         x = tf.keras.backend.flatten(x)
 
         z_decoded = tf.keras.backend.flatten(z_decoded)
-        xent_loss = tf.keras.losses.binary_crossentropy(x, z_decoded)
+        reconstruction_loss = tf.keras.losses.binary_crossentropy(x, z_decoded)
 
         kl_loss = -5e-4 * tf.keras.backend.mean(
             1 + z_log_var - tf.keras.backend.square(z_mean) - tf.keras.backend.exp(z_log_var),
             axis=-1
             )
-
-        return tf.keras.backend.mean(xent_loss + kl_loss)
+        return tf.keras.backend.mean(reconstruction_loss + kl_loss)
 
     # Instantiate the VAE model:
     vae = tf.keras.models.Model(encoder_input, z_decoded)
