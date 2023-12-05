@@ -2,15 +2,8 @@
 VAE Model Architectures
 
 """
-
-from tensorflow.keras import backend as K
-
-from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, Lambda
-from tensorflow.keras import losses
-from tensorflow.keras.optimizers import Adam
+import tensorflow as tf
 import numpy as np
-
 
 def Hidden_layer_neurons(latent_dim, original_dim, number_of_hidden_layers):
     # Get number of neurons for each hidden layer
@@ -59,30 +52,30 @@ def vae_encoder(original_dim, latent_dim=2, num_of_hidden_layer=4):
     """
 
     input_shape = (original_dim, )
-    encoder_input = x = Input(shape=input_shape)
+    encoder_input = x = tf.keras.layers.Input(shape=input_shape)
 
     neuron_layer = Hidden_layer_neurons(latent_dim, original_dim, num_of_hidden_layer)
 
     for i in range(len(neuron_layer) - 2, 0, -1):
-        x = Dense(neuron_layer[i], activation='relu')(x)
+        x = tf.keras.layers.Dense(neuron_layer[i], activation='relu')(x)
 
-    z_mean = Dense(latent_dim)(x)
-    z_log_var = Dense(latent_dim)(x)
+    z_mean = tf.keras.layers.Dense(latent_dim)(x)
+    z_log_var = tf.keras.layers.Dense(latent_dim)(x)
 
     def sampling(args):
         z_mean, z_log_var = args
 
-        epsilon = K.random_normal(
-            shape=(K.shape(z_mean)[0], latent_dim), mean=0., stddev=1.
+        epsilon = tf.keras.backend.random_normal(
+            shape=(tf.keras.backend.shape(z_mean)[0], latent_dim), mean=0., stddev=1.
             )
 
-        return z_mean + K.exp(z_log_var) * epsilon
+        return z_mean + tf.keras.backend.exp(z_log_var) * epsilon
 
-    z = Lambda(sampling)([z_mean, z_log_var])
+    z = tf.keras.layers.Lambda(sampling)([z_mean, z_log_var])
     #This Lambda layerfor mean and variance
 
     # create encoder
-    encoder = Model(encoder_input, [z_mean, z_log_var, z])
+    encoder = tf.keras.models.Model(encoder_input, [z_mean, z_log_var, z])
     return encoder, z_mean, z_log_var, encoder_input
 
 def vae_decoder(original_dim, latent_dim=2, num_of_hidden_layer=4):    
@@ -104,16 +97,16 @@ def vae_decoder(original_dim, latent_dim=2, num_of_hidden_layer=4):
         constructed decoder model
     """
 
-    latent_inputs = x = Input(shape=(latent_dim,))
+    latent_inputs = x = tf.keras.layers.Input(shape=(latent_dim,))
 
     neuron_layer = Hidden_layer_neurons(latent_dim, original_dim, num_of_hidden_layer)
 
     for i in range(1, len(neuron_layer) - 1):
-        x = Dense(neuron_layer[i], activation='relu')(x)
+        x = tf.keras.layers.Dense(neuron_layer[i], activation='relu')(x)
 
-    x = Dense(original_dim, activation='sigmoid')(x)
+    x = tf.keras.layers.Dense(original_dim, activation='sigmoid')(x)
 
-    decoder = Model(latent_inputs, x)
+    decoder = tf.keras.models.Model(latent_inputs, x)
     return decoder
 
 
@@ -138,7 +131,7 @@ def build_vae(original_dim, latent_dim=2, num_of_hidden_layer=4, rate=0.0001):
     vae: keras.Model
         constructed VAE model
     """
-    K.clear_session()
+    # tf.keras.backend.clear_session()
     # init encoder and decoder
     encoder, z_mean, z_log_var, encoder_input = vae_encoder(
         original_dim, latent_dim, num_of_hidden_layer
@@ -151,23 +144,23 @@ def build_vae(original_dim, latent_dim=2, num_of_hidden_layer=4, rate=0.0001):
 
     def vae_loss(x, z_decoded):
         # reconstruction loss
-        x = K.flatten(x)
+        x = tf.keras.backend.flatten(x)
 
-        z_decoded = K.flatten(z_decoded)
-        xent_loss = losses.binary_crossentropy(x, z_decoded)
+        z_decoded = tf.keras.backend.flatten(z_decoded)
+        xent_loss = tf.keras.losses.binary_crossentropy(x, z_decoded)
 
-        kl_loss = -5e-4 * K.mean(
-            1 + z_log_var - K.square(z_mean) - K.exp(z_log_var),
+        kl_loss = -5e-4 * tf.keras.backend.mean(
+            1 + z_log_var - tf.keras.backend.square(z_mean) - tf.keras.backend.exp(z_log_var),
             axis=-1
             )
 
-        return K.mean(xent_loss + kl_loss)
+        return tf.keras.backend.mean(xent_loss + kl_loss)
 
     # Instantiate the VAE model:
-    vae = Model(encoder_input, z_decoded)
+    vae = tf.keras.models.Model(encoder_input, z_decoded)
     vae.add_loss(vae_loss(encoder_input, z_decoded))
 
-    opt = Adam(learning_rate=rate)
+    opt = tf.keras.optimizers.Adam(learning_rate=rate)
     vae.compile(optimizer=opt)
     #for layer in vae.layers: print(layer, "layer.get_weights", layer.get_weights())
     return encoder, decoder, vae

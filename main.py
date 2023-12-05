@@ -9,14 +9,14 @@
 # MDAnalysis
 # MDTraj
 
-from utils.input_gen import *
-from utils.train_and_eval import *
 import pandas as pd
 import argparse
-import sys
-import os
-from tensorflow import random
+import os, sys
+import tensorflow as tf
 import json 
+
+from utils.input_gen import *
+from utils.train_and_eval import *
 
 def get_input(psf, pdb, traj, split, input_type="cartesian"):
     """
@@ -50,7 +50,6 @@ def get_input(psf, pdb, traj, split, input_type="cartesian"):
         remove_selection = None
         contact_map = get_contact_map(psf, traj)
         scaler, test, train = scaling_spliting_contact_map(contact_map, split)
-    
     return scaler, test, train, R, remove_selection
 
 def main():
@@ -75,7 +74,7 @@ def main():
                         'RATE': input_args['RATE'], # give a 'list' type
                         }
     hyperparams_combinations = gen_parms_combinations(**hyperparams_dict)
-    random.set_seed(seed)
+    tf.random.set_seed(seed)
 
     # make dir for decoder-generated trajectories
     outtraj_dirname = f"{data_path}/{input_args['input_type']}"
@@ -118,11 +117,11 @@ def main():
                      index=False, float_format='%.6f')
 
     # generate the PDB file and further analysis
-    if input_args['post_analysis'] == True:
+#    if input_args['post_analysis'] == True:
         # original trajectory analysis 
         # Post_Analysis(Summary,input_args['input_bad'], input_args['input_type'], psf, traj, input_args['top'], outtraj_dirname, pdb, input_args['timestep'], input_args['rmsd_names'],input_args['rmsd_cal'],input_args['selection'])
-        pass
-    print("job finished")
+#        pass
+#    print("job finished")
     return None
 
 if __name__ == "__main__":

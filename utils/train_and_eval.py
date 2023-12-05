@@ -1,25 +1,23 @@
 # Dependencies
 import pickle
-import os
-from tensorflow.keras.callbacks import EarlyStopping
-from sklearn.metrics.pairwise import euclidean_distances
-from scipy.stats import spearmanr, pearsonr
+import os, sys, datetime
+import tensorflow as tf
 import numpy as np
-from sklearn.preprocessing import MinMaxScaler
 import matplotlib as mpl
 import MDAnalysis as mda
-from tensorflow.keras.callbacks import Callback
-from tensorflow.keras.callbacks import TensorBoard
-from tensorflow import random
-import sys
-import datetime
-from subprocess import run
+
+from sklearn.metrics.pairwise import euclidean_distances
+from scipy.stats import spearmanr, pearsonr
 
 import multiprocessing
-from multiprocessing import Lock, Process, Queue, current_process
+from multiprocessing import Process
 
 from utils.model import *
 from utils.plot import *
+
+import warnings
+# Filter out the specific UserWarning
+warnings.filterwarnings("ignore", category=UserWarning)
 
 
 def training(**kwargs):
@@ -41,7 +39,7 @@ def training(**kwargs):
 
     """
     seed = kwargs['seed']
-    random.set_seed(seed)
+    tf.random.set_seed(seed)
     scaler = kwargs['scaler']
     x_test = kwargs['x_test']
     x_train = kwargs['x_train']
@@ -61,7 +59,7 @@ def training(**kwargs):
 
     # Train VAE MODEL
     log_dir = str(outtraj_dirname) + "/logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
-    tensorboard_callback = TensorBoard(log_dir=log_dir, histogram_freq=1)
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
  
     if "early_stopping" == False:
         history = vae.fit(x=x_train, y=x_train,
@@ -72,7 +70,7 @@ def training(**kwargs):
                 callbacks = [tensorboard_callback])
     else:
         # If you want early stopping:
-        early_stopping = EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1, mode='auto')
+        early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', min_delta=0, patience=10, verbose=1, mode='auto')
         history = vae.fit(x=x_train, y=x_train,
                 shuffle=True,
                 epochs=EPOCHS,
