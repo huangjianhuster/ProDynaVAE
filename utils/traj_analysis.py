@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import MDAnalysis.analysis.rms as rms
 import mdtraj as md
 import parmed as pmd
+from MDAnalysis.analysis import align
 
 # RMSD calculation
 def traj_rmsd(psf, xtc, align_select, rmsd_list):
@@ -82,7 +83,7 @@ def endtoend(psf,dcd):
     frame = []
     for ts in u.trajectory:  # iterate through all frames
         r = cterm.position - nterm.position  # end-to-end vector from atom positions
-        d = numpy.linalg.norm(r)   # end-to-end distance
+        d = np.linalg.norm(r)   # end-to-end distance
         frame.append(ts.frame)
         ete.append(d)
     return frame, ete

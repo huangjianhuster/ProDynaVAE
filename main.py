@@ -29,7 +29,7 @@ def get_input(psf, pdb, traj, split, input_type="cartesian"):
         scaler, test, train = scaling_spliting_dihedrals(dihedrals)
         
     elif input_type == "dihedral_backbone":
-        remove_selection = None
+        remove_selection = "phi and psi"
         original = "original"
         phi, psi = get_bbtorsion(psf, traj)
         dihedrals = np.concatenate((phi,psi),axis=1)
@@ -38,17 +38,22 @@ def get_input(psf, pdb, traj, split, input_type="cartesian"):
 
     elif input_type == "cartesian":
         remove_selection = "not name H*"
-        coordinates = get_xyz(pdb, traj)
+        coordinates = get_xyz(pdb, traj, remove_selection)
         scaler, test, train = scaling_spliting_cartesian(coordinates, split)
 
     elif input_type == "calpha":
-        remove_selection = "not (name CA and protein)"
-        coordinates = get_cxyz(pdb, traj)
+        remove_selection = "name CA"
+        coordinates = get_xyz(pdb, traj,remove_selection)
+        scaler, test, train = scaling_spliting_cartesian(coordinates , split)
+
+    elif input_type == "calphabeta":
+        remove_selection = "name CA or name CB"
+        coordinates = get_xyz(pdb, traj,remove_selection)
         scaler, test, train = scaling_spliting_cartesian(coordinates , split)
 
     elif input_type == "contact_map":
-        remove_selection = None
-        contact_map = get_contact_map(psf, traj)
+        remove_selection = "name CA"
+        contact_map = get_contact_map(psf, traj,remove_selection)
         scaler, test, train = scaling_spliting_contact_map(contact_map, split)
     return scaler, test, train, R, remove_selection
 
@@ -87,7 +92,7 @@ def main():
     # add argument to save the train, validation, test
     pickle.dump(test, open(f"{outtraj_dirname}/test_dataset_{seed}.pkl", "wb"))
     pickle.dump(train, open(f"{outtraj_dirname}/train_dataset_{seed}.pkl", "wb"))
-
+    
     # VAE model traning
     Summary = []
     for hyperparams_dict in hyperparams_combinations:
@@ -104,7 +109,8 @@ def main():
         # VAE model evaluation
         return_dict = training(**training_input)
         # generate decoder xtc files
-        demap_to_xtc(psf, return_dict['demap'], remove_selection, f"{outtraj_dirname}/{return_dict['hyper_together']}")
+        demap_to_xtc(psf, pdb,return_dict['demap'], remove_selection, f"{outtraj_dirname}/{return_dict['hyper_together']}")
+        demap_to_xtc(psf, pdb,return_dict['x_test'], remove_selection, f"{outtraj_dirname}")
         # dict to store RMSD and correlation;
         del return_dict['outtraj_dirname']
         del return_dict['demap']

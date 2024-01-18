@@ -3,10 +3,13 @@
 # E-mail: jianhuang@umass.edu
 
 # Dependencies
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
 import MDAnalysis as mda
 from MDAnalysis.analysis import dihedrals
+from scipy.stats import norm
 
 # Pre-Training Analysis
 
@@ -155,28 +158,44 @@ def psi_plot(dihs, orig, all_hype):
 
 # Latent space
 
-def latent_space_plot(encoded, save_path):
-    # Latent_encoded
-    a = encoded[0]
+def latent_space_plot(encoded, LD, rmsd, save_path):
+    # Latent encoded points in 2D space
+    a = encoded[2]
+
+    rows = int(np.sqrt(LD))
+    cols = int(np.ceil(LD / rows))
+
+    fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(cols * 4, rows * 4))
+    fig.subplots_adjust(hspace=0.6, wspace=0.4)
+
+    for i, ax in enumerate(axes.flatten()):
+    #    for j, ax1 in enumerate(axes.flatten()):
+        if i < LD-1:
+           ax.scatter(a[:,i],a[:,i+1], c='r',label=f"LD {i} {i+1}")
+           ax.set_xlabel(f'z{i}')
+           ax.set_ylabel(f'z{i+1}')
+        else:
+            fig.delaxes(ax)
+    plt.savefig(f"{save_path}/LS_plot.png")
+    plt.close()
+
     plt.cla()
     plt.clf()
-    plt.scatter(a[:,0],a[:,1],c='r')
-    plt.savefig(f"{save_path}/encoder_mean.png")
-
-    # Latent_Mean
-    b = encoded[1]
-    plt.cla()
-    plt.clf()
-    plt.scatter(b[:,0],b[:,1],c='b',s=5)
-    plt.savefig(f"{save_path}/encoder_variance.png")
-
-    # Latent_variance
-    c = encoded[2]
-    plt.cla()
-    plt.clf()
-    plt.scatter(c[:,0],c[:,1],c='g',s=5)
-    plt.savefig(f"{save_path}/plt_encoded.png")
-
+    rows = int(np.sqrt(LD))
+    cols = int(np.ceil(LD / rows))
+    x = np.linspace(-4, 4, 100)
+    fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=(cols * 4, rows * 4))
+    fig.subplots_adjust(hspace=0.6, wspace=0.4)
+    for i, ax in enumerate(axes.flatten()):
+        if i < LD:
+            ax.hist(a[:, i], density=True, bins=30, label=f"LD {i}")
+            ax.plot(x, norm.pdf(x))
+        else:
+            fig.delaxes(ax)
+    plt.xlabel('Latent Dimension')
+    #plt.ylabel('')
+    plt.savefig(f"{save_path}/LS_distribution.png")
+    plt.close()
     return None
 
 # losses plot
@@ -189,8 +208,8 @@ def train_test_loss_plot(history, out_path,all_hype):
     Plotting between the loss/val loss and epoch
     """
     
-    plt.cla()
-    plt.clf()
+    # plt.cla()
+    # plt.clf()
     plt.plot(history.history['loss'])
     plt.plot(history.history['val_loss'])
     plt.title(f'loss{all_hype}')
@@ -540,7 +559,7 @@ def plot_distribution(array_data, bins=100):
     # ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     # ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     ax.grid()
-    plt.show()
+    # plt.show()
     return None
 
 # Plot the distributions of all the covalent
@@ -560,7 +579,7 @@ def post_training_distribution(covalent, cov_names, bins=100):
         # ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
         ax.grid()
         plt.savefig(f"CV{n}.png")
-        plt.show()
+        #plt.show()
 
 
 # Plot Gaussian distribution
@@ -578,7 +597,7 @@ def plot_Gaussion(x,y):
     ax.tick_params(axis='both', which='major', length=10, labelsize=16)
     # ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
     # ax.xaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-    plt.show()
+    # plt.show()
     return None
 
 
@@ -596,9 +615,19 @@ def post_training_Gaussian(y, x, cov_names):
         ax.set_xlabel("CV", fontsize=16)
         ax.set_ylabel("Probability", fontsize=16)
         ax.tick_params(axis='both', which='major', length=10, labelsize=16)
-        plt.show()
+        # plt.show()
     return None
 
+def plot_label_clusters(vae, data, labels):
+    # display a 2D plot of the digit classes in the latent space
+    z_mean, _, _ = vae.encoder.predict(data, verbose=0)
+    plt.figure(figsize=(12, 10))
+    plt.scatter(z_mean[:, 0], z_mean[:, 1])#, c=labels)
+    # plt.colorbar()
+    plt.xlabel("z[0]")
+    plt.ylabel("z[1]")
+    plt.savefig(f"{all_hype}/latent.png")
+    # plt.show()
 
 
 

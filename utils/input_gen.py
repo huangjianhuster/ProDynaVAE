@@ -58,9 +58,9 @@ def get_ic(psf, xtc):
     dihedrals = R.results.bat[:, (len(u.atoms)-3)*2+9:]
     return Ec, bonds, angles, dihedrals, R
 
-def get_xyz(psf, xtc):
+def get_xyz(psf, xtc,remove_selection):
     u = mda.Universe(psf, xtc)
-    heavy_atoms = u.select_atoms('not name H*')
+    heavy_atoms = u.select_atoms(remove_selection)
     xyz = []
     for ts in u.trajectory:
         xyz.append(heavy_atoms.positions)
@@ -76,11 +76,29 @@ def get_cxyz(psf, xtc):
     xyz_array = np.array(xyz)
     return xyz_array
 
-def get_contact_map(psf, xtc):
+def get_contact_map(psf, xtc,remove_selection):
+    # Load trajectory and topology files
     u = mda.Universe(psf, xtc)
-    return None    
+    
+    # Select atoms of interest (e.g., all atoms or a specific group)
+    atoms_selection = u.select_atoms(remove_selection)
+    
+    # Initialize an empty contact matrix
+    contact_matrix = []
+    
+    # Iterate over frames in the trajectory
+    for ts in u.trajectory:
+        # Calculate distances between selected atoms
+        distances = mda.lib.distances.distance_array(atoms_selection.positions, atoms_selection.positions)
+    
+        # Set a distance threshold for contacts (e.g., 8 Å)
+        contacts = distances < 8.0
+        # Update the contact matrix
+        contact_matrix.append(contacts)
+    return contact_matrix*1 
 
 # https://userguide.mdanalysis.org/1.1.1/examples/analysis/structure/dihedrals.html
+
 def get_bbtorsion(psf, xtc):
     """
     bb_torsion: 2d arrary with a shape of (n_frames, 2*n_atomgroups)
@@ -118,7 +136,7 @@ def scaling_spliting_dihedrals(arr, split):
     scale = scaler.fit_transform(maps)
 
     # split dataset into testing and training
-    x_train, x_test, y_train, y_t = train_test_split(maps_scale, scale, test_size=split, random_state=42)
+    x_train, x_test, y_train, y_t = train_test_split(maps_scale, scale, test_size=split, random_state=42,shuffle=True)
  #   x_val, x_test, y_val, y_test = train_test_split(x_t, y_t, test_size=0.5, random_state=42)
     #x_test = scale[::4]
     #x_train = np.delete(scale, list(range(0, scale.shape[0], 4)), axis=0)
@@ -129,6 +147,6 @@ def scaling_spliting_cartesian(mps, split):
     scaler = MinMaxScaler()
     scale = scaler.fit_transform(maps)
     # split dataset into testing and training
-    x_test, x_train, yt, yt = train_test_split(scale, scale, test_size=split, random_state=42)
+    x_test, x_train, yt, yt = train_test_split(scale, scale, test_size=split, random_state=42,shuffle=True)
 #    x_val, x_test, yt ,yt  = train_test_split(x_t, x_t, test_size=0.5, random_state=42)
     return scaler, x_test, x_train
