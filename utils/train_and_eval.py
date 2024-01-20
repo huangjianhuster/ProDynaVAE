@@ -14,7 +14,7 @@ from multiprocessing import Process
 import subprocess
 import concurrent.futures
 
-from utils.model_2 import *
+# from utils.model_2 import *
 from utils.plot import *
 
 import warnings
