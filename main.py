@@ -104,7 +104,7 @@ def main():
         # VAE model evaluation
         return_dict = training(**training_input)
         # generate decoder xtc files
-        demap_to_xtc(psf, return_dict['demap'], remove_selection, f"{outtraj_dirname}/{return_dict['hyper_together']}")
+        demap_to_xtc(psf, pdb, return_dict['demap'], remove_selection, f"{outtraj_dirname}/{return_dict['hyper_together']}")
         # dict to store RMSD and correlation;
         del return_dict['outtraj_dirname']
         del return_dict['demap']

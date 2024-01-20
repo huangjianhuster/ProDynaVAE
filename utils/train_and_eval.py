@@ -320,7 +320,7 @@ def demap_to_xtc(psf, pdb, demap, remove_selection, out_xtc):
     if remove_selection in ["phi", "psi", "omega"]:
         Dihedral_XTC(pdb, new_fold, demap, selection)
         return
-        
+    
     u = mda.Universe(psf)
     nonH_atoms = u.select_atoms(remove_selection)   # example: "not name H*"
 
@@ -332,9 +332,13 @@ def demap_to_xtc(psf, pdb, demap, remove_selection, out_xtc):
 
     nonH = mda.Merge(nonH_atoms)
     nonH.load_new(demap[0].reshape((len(nonH_atoms), 3)))
-    nonH.select_atoms("all").write(f"{out_xtc}/noH.pdb")
 
-    #if remove_selection == "name CA":
+    # write out a PDB with removed selection
+    u_pdb = mda.Universe(pdb)
+    decoder_pdb = u_pdb.select_atoms(remove_selection)
+    decoder_pdb.write(f"{out_xtc}/decoder.pdb")
+
+    # if remove_selection == "name CA":
     #    CA_XTC(f"{out_xtc}/noH.pdb", out_xtc, demap)
 
     #else:
