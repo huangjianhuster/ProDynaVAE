@@ -183,7 +183,7 @@ class Ensemble:
         r_eq = self.improper_types[(atom1_type, atom2_type, atom3_type, atom4_type)]
         return r_eq
         
-    def get_bonds(self, selection, atom1_name, atom2_name, n_threads=None):
+    def get_bond(self, selection, atom1_name, atom2_name, n_threads=None):
         """
         selection: MDAnalysis selection syntax; example "protein and resid 10"
         atom1_type: atomname of the first atom;
@@ -207,7 +207,7 @@ class Ensemble:
         bonds = np.asarray(result)
         return bonds
     
-    def get_angles(self, selection, atom1_name, atom2_name, atom3_name, n_threads=None):
+    def get_angle(self, selection, atom1_name, atom2_name, atom3_name, n_threads=None):
         """
         selection: MDAnalysis selection syntax; example "protein and resid 10"
         atom1_type: atom type of the first atom;
@@ -495,7 +495,7 @@ if __name__ == "__main__":
     pdb = "/home2/jianhuang/projects/VAE/dataset/protein_A/step4.1_equilibration.pro.pdb"
     psf = "/home2/jianhuang/projects/VAE/dataset/protein_A/step1_pdbreader.psf"
     xtc = "/home2/jianhuang/projects/VAE/dataset/protein_A/100ns_gmx_pro_alignca.xtc"
-    top = "/home2/jianhuang/projects/VAE/dataset/protein_A/topol.top"
+    top = "/home2/jianhuang/projects/VAE/dataset/protein_A/topol.top"   # a gromacs top and a toppar dir is necessary
 
     align_selection = "protein and (resid 10 to 18 or resid 25 to 33 or resid 41 to 55) and name CA"
     rmsd_selection = ["protein and name CA",
@@ -507,50 +507,55 @@ if __name__ == "__main__":
     ensemble_test = Ensemble(psf, xtc, top)
 
     # RMSF
-    # print(ensemble_test.rmsf())
+    print(ensemble_test.rmsf())
 
     # Rg
-    # ensemble_test.rg()
-    # print(ensemble_test.rg)
+    ensemble_test.rg()
+    print(ensemble_test.rg)
 
     # SS: this could be slow...
-    # second = ensemble_test.get_ss()
+    second = ensemble_test.get_ss()
 
     # get resid and requence
-    # print(ensemble_test.sequence)
-    # print(ensemble_test.resid)
+    print(ensemble_test.sequence)
+    print(ensemble_test.resid)
 
     # end2end
-    # print(ensemble_test.get_end2end())
+    print(ensemble_test.get_end2end())
 
     # PCA
-    # print(ensemble_test.pca(selection="backbone"))
+    print(ensemble_test.pca(selection="backbone"))
 
     # bonds
-    # bonds = ensemble_test.get_bonds(atom1_type='C', atom2_type='CT1')
-    # print(bonds)
-    # print(bonds.shape)
+    # <-- we are using atom names for a specific bonds now
+    # in my case, resid 10 is a lysine, numbering starting from 1
+    # first print out atom names and atom types in this resid10
+    ensemble_test.get_atoms_info(resid=10)
+    # for the bond between CE and NZ atoms
+    CE_NZ_bond = ensemble_test.get_bond(selection="protein and resid 10", atom1_name='CE', atom2_name='NZ')
+    print(CE_NZ_bond, CE_NZ_bond.shape)
 
-    # angles
-    # angles = ensemble_test.get_angles(atom1_type='C', atom2_type='CT1', atom3_type='CT3')
-    # print(angles)
-    # print(angles.shape)
+    # for the angle between CD, CE, NZ
+    CD_CE_NZ_angle = ensemble_test.get_angle(selection="protein and resid 10", atom1_name='CD', atom2_name='CE', atom3_name='NZ')
+    print(CD_CE_NZ_angle, CD_CE_NZ_angle.shape)
 
-    # dihedrals
-    # dihedrals = ensemble_test.get_dihedrals(atom1_type='C', atom2_type='NH1', atom3_type='CT1', atom4_type="C")
-    # print(dihedrals)
-    # print(dihedrals.shape)
+    # a specific dihedral from a specific residue
+    dihedral = ensemble_test.get_dihedral(resid=10, atom1_name='CG', atom2_name='CD', atom3_name='CE', atom4_name='NZ')
+    print(dihedral, dihedral.shape)
 
-    # get psi, phi and omega
-    # psis = ensemble_test.get_psi(res_selection="5-10")
-    # print("psis: ", psis)
-    # print(psis.shape)
-    # phis = ensemble_test.get_phi(res_selection="5-10")
-    # print("phis: ", psis)
-    # print(phis.shape)
-    # omegas = ensemble_test.get_omega(res_selection="5-10")
-    # print("omegas: ", psis)
-    # print(omegas.shape)
+    # get psi, phi and omega, chi1
+    psis = ensemble_test.get_psi(res_selection="5-10")
+    print("psis: ", psis)
+    print(psis.shape)
+    phis = ensemble_test.get_phi(res_selection="5-10")
+    print("phis: ", psis)
+    print(phis.shape)
+    omegas = ensemble_test.get_omega(res_selection="5-10")
+    print("omegas: ", psis)
+    print(omegas.shape)
+    chi1s = ensemble_test.get_chi1(res_selection="5-10")
+    print("chi1s: ", chi1s)
+    print(chi1s.shape)
 
     # get impropers
     impropers = ensemble_test.get_bb_impropers(res_selection="5-10")
