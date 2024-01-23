@@ -265,6 +265,7 @@ class Ensemble:
         """
             for a give resid, get the atom name and type for all atoms
             resid: int  
+            output: list of tuples, [(atom1_name, atom1_type), ...]
         """
         res = self.universe.select_atoms(f'protein and resid {resid}')
         atom_names = [(atom.name, atom.type) for atom in res]
@@ -429,33 +430,33 @@ def end2end_per_frame(frame_index, atomgroup):
     d = np.linalg.norm(r)   # end-to-end distance
     return d
 
-def bonds_per_frame(frame_index, atomgroup, atom1_type, atom2_type):
+def bonds_per_frame(frame_index, atomgroup, atom1_name, atom2_name):
     """
     atomgroup: atomgroup from MDAnalysis
-    atom1_name: atomname of the first atom
-    atom2_name: atomname of the second atom
+    atom1_name: atom name of the first atom
+    atom2_name: atom name of the second atom
     return: bond length array (unit: Angstrom)
     """
     atomgroup.universe.trajectory[frame_index]
-    bonds = [bond.value() for bond in atomgroup.bonds if (bond.atoms[0].type == atom1_type and bond.atoms[1].type == atom2_type) or \
-                                                         (bond.atoms[0].type == atom2_type and bond.atoms[1].type == atom1_type)]
+    bonds = [bond.value() for bond in atomgroup.bonds if (bond.atoms[0].name == atom1_name and bond.atoms[1].name == atom2_name) or \
+                                                         (bond.atoms[0].name == atom2_name and bond.atoms[1].name == atom1_name)]
     return np.array(bonds)
 
-def angles_per_frame(frame_index, atomgroup, atom1_type, atom2_type, atom3_type):
+def angles_per_frame(frame_index, atomgroup, atom1_name, atom2_name, atom3_name):
     """
     atomgroup: atomgroup from MDAnalysis
-    atom1_name: atomname of the first atom
-    atom2_name: atomname of the second atom
-    atom3_name: atomname of the third atom
+    atom1_name: atom name of the first atom
+    atom2_name: atom name of the second atom
+    atom3_name: atom name of the third atom
     return: angle array (unit: degree)
     """
     atomgroup.universe.trajectory[frame_index]
     angles = [angle.value() for angle in atomgroup.angles \
-              if (angle.atoms[0].type == atom1_type and angle.atoms[1].type == atom2_type and angle.atoms[2].type == atom3_type) or \
-                (angle.atoms[0].type == atom3_type and angle.atoms[1].type == atom2_type and angle.atoms[2].type == atom1_type)]
+              if (angle.atoms[0].name == atom1_name and angle.atoms[1].name == atom2_name and angle.atoms[2].name == atom3_name) or \
+                (angle.atoms[0].name == atom3_name and angle.atoms[1].name == atom2_name and angle.atoms[2].name == atom1_name)]
     return np.array(angles)
 
-def dihedrals_per_frame(frame_index, atomgroup, atom1_type, atom2_type, atom3_type, atom4_type):
+def dihedrals_per_frame(frame_index, atomgroup, atom1_name, atom2_name, atom3_name, atom4_name):
     """
     atomgroup: atomgroup from MDAnalysis
     atom1_name: atomname of the first atom
@@ -466,8 +467,8 @@ def dihedrals_per_frame(frame_index, atomgroup, atom1_type, atom2_type, atom3_ty
     """
     atomgroup.universe.trajectory[frame_index]
     dihedral = [dihedral.value() for dihedral in atomgroup.dihedrals \
-              if (dihedral.atoms[0].type == atom1_type and dihedral.atoms[1].type == atom2_type \
-                  and dihedral.atoms[2].type == atom3_type and dihedral.atoms[3].type == atom4_type)]
+              if (dihedral.atoms[0].name == atom1_name and dihedral.atoms[1].name == atom2_name \
+                  and dihedral.atoms[2].name == atom3_name and dihedral.atoms[3].name == atom4_name)]
     return np.array(dihedral)
 
 def bb_impropers_per_frame(frame_index, atomgroup):
