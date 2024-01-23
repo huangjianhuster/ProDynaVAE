@@ -183,16 +183,17 @@ class Ensemble:
         r_eq = self.improper_types[(atom1_type, atom2_type, atom3_type, atom4_type)]
         return r_eq
         
-    def get_bonds(self, atom1_type, atom2_type, n_threads=None):
+    def get_bonds(self, selection, atom1_type, atom2_type, n_threads=None):
         """
-        top: topology file (itp or top);
+        selection: MDAnalysis selection syntax; example "protein and resid 10"
         atom1_type: atomname of the first atom;
         atom2_type: atomname of the second atom;
         n_threads: number of CPU threads;
         return: bond length array # unit: Angstrom
         """
+        atom_group = self.universe.select_atoms(selection)
         run_per_frame = partial(bonds_per_frame,
-                        atomgroup=self.protein,
+                        atomgroup = atom_group, 
                         atom1_type=atom1_type, 
                         atom2_type=atom2_type)
         
@@ -206,17 +207,18 @@ class Ensemble:
         bonds = np.asarray(result)
         return bonds
     
-    def get_angles(self, atom1_type, atom2_type, atom3_type, n_threads=None):
+    def get_angles(self, selection, atom1_type, atom2_type, atom3_type, n_threads=None):
         """
-        top: topology file (itp or top);
-        atom1_type: atomname of the first atom;
-        atom2_type: atomname of the second atom;
-        atom3_type: atomname of the third atom;
+        selection: MDAnalysis selection syntax; example "protein and resid 10"
+        atom1_type: atom type of the first atom;
+        atom2_type: atom type of the second atom;
+        atom3_type: atom type of the third atom;
         n_threads: number of CPU threads;
         return: angle array # unit: degree
         """
+        atom_group = self.universe.select_atoms(selection)
         run_per_frame = partial(angles_per_frame,
-                        atomgroup=self.protein,
+                        atomgroup=atom_group,
                         atom1_type=atom1_type, 
                         atom2_type=atom2_type,
                         atom3_type=atom3_type)
@@ -233,7 +235,8 @@ class Ensemble:
 
     def get_dihedrals(self, atom1_type, atom2_type, atom3_type, atom4_type, n_threads=None):
         """
-        top: topology file (itp or top);
+        get a certain dihedral type (may includes many dihedrals from different residues) from the whole protein
+
         atom1_type: atomname of the first atom;
         atom2_type: atomname of the second atom;
         atom3_type: atomname of the third atom;
@@ -257,6 +260,26 @@ class Ensemble:
             result = worker_pool.map(run_per_frame, np.arange(self.n_frames))
         dihedrals = np.asarray(result)
         return dihedrals
+
+    def get_atoms_info(self, resid):
+        """
+            for a give resid, get the atom name and type for all atoms
+            resid: int  
+        """
+        res = self.universe.select_atoms(f'protein and resid {resid}')
+        atom_names = [(atom.name, atom.type) for atom in res]
+        return atom_names
+    
+    def get_dihedral(self, resid, atom1_name, atom2_name, atom3_name, atom4_name):
+        """
+            for a specifc diheral angles of a specific residue
+
+            resid: int; 
+            atom1_name, atom2_name, atom3_name, atom4_name: name of atoms based on the given psf
+        """
+        ags = [ self.universe.select_atoms(f"resid {resid} and name {atom1_name} {atom2_name} {atom3_name} {atom4_name}")]
+        R = Dihedral(ags).run()
+        return R.results.angles
     
     # MDAnalysis provides us with Dihedral module:
     # https://docs.mdanalysis.org/1.1.0/documentation_pages/analysis/dihedrals.html
@@ -268,11 +291,14 @@ class Ensemble:
         """
         if res_selection:
             selection = f"protein and resid {res_selection}"
+            r = self.universe.select_atoms(selection)
+            ags = [res.phi_selection() for res in r.residues]
+            R = Dihedral(ags).run()
         else:
             selection = "protein"    # res_selection = "5-10"
-        r = self.universe.select_atoms(selection) 
-        ags = [res.phi_selection() for res in r.residues[1:]]
-        R = Dihedral(ags).run()
+            r = self.universe.select_atoms(selection)
+            ags = [res.phi_selection() for res in r.residues[1:]]
+            R = Dihedral(ags).run()
         return R.results.angles
 
     def get_psi(self, res_selection=None):
@@ -283,11 +309,14 @@ class Ensemble:
         """
         if res_selection:
             selection = f"protein and resid {res_selection}"
+            r = self.universe.select_atoms(selection)
+            ags = [res.psi_selection() for res in r.residues]
+            R = Dihedral(ags).run()
         else:
             selection = "protein"    # res_selection = "5-10"
-        r = self.universe.select_atoms(selection)    
-        ags = [res.psi_selection() for res in r.residues[:-1]]
-        R = Dihedral(ags).run()
+            r = self.universe.select_atoms(selection)    
+            ags = [res.psi_selection() for res in r.residues[:-1]]
+            R = Dihedral(ags).run()
         return R.results.angles
 
     def get_omega(self, res_selection=None):
@@ -298,11 +327,14 @@ class Ensemble:
         """
         if res_selection:
             selection = f"protein and resid {res_selection}"
+            r = self.universe.select_atoms(selection)
+            ags = [res.omega_selection() for res in r.residues]
+            R = Dihedral(ags).run()
         else:
             selection = "protein"    # res_selection = "5-10"
-        r = self.universe.select_atoms(selection) 
-        ags = [res.omega_selection() for res in r.residues[:-1]]
-        R = Dihedral(ags).run()
+            r = self.universe.select_atoms(selection) 
+            ags = [res.omega_selection() for res in r.residues[:-1]]
+            R = Dihedral(ags).run()
         return R.results.angles
 
     def get_chi1(self, res_selection=None):
@@ -405,8 +437,8 @@ def bonds_per_frame(frame_index, atomgroup, atom1_type, atom2_type):
     return: bond length array (unit: Angstrom)
     """
     atomgroup.universe.trajectory[frame_index]
-    bonds = [bond.value() for bond in atomgroup.bonds if (bond.atoms[0].type == atom1_type and bond.atoms[0].type == atom2_type) or \
-                                                         (bond.atoms[1].type == atom1_type and bond.atoms[0].type == atom2_type)]
+    bonds = [bond.value() for bond in atomgroup.bonds if (bond.atoms[0].type == atom1_type and bond.atoms[1].type == atom2_type) or \
+                                                         (bond.atoms[0].type == atom2_type and bond.atoms[1].type == atom1_type)]
     return np.array(bonds)
 
 def angles_per_frame(frame_index, atomgroup, atom1_type, atom2_type, atom3_type):

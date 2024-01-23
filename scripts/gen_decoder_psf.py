@@ -4,6 +4,7 @@ import sys
 gen = PsfGen()
 top = "/home2/jianhuang/tutorial/forcefield/toppar/top_all22_prot.rtf"
 pdb = sys.argv[1]
+output_pdb = sys.argv[2]
 
 gen.read_topology(top)
 segid='A'
@@ -17,5 +18,5 @@ for resid in gen.get_resids(segid):
     for hydro in hydrogens:
         gen.delete_atoms(segid, resid, hydro)
 
-gen.write_psf("./test.psf")
+gen.write_psf(output_pdb)
 
