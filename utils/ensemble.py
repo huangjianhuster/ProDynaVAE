@@ -183,7 +183,7 @@ class Ensemble:
         r_eq = self.improper_types[(atom1_type, atom2_type, atom3_type, atom4_type)]
         return r_eq
         
-    def get_bonds(self, selection, atom1_type, atom2_type, n_threads=None):
+    def get_bonds(self, selection, atom1_name, atom2_name, n_threads=None):
         """
         selection: MDAnalysis selection syntax; example "protein and resid 10"
         atom1_type: atomname of the first atom;
@@ -194,8 +194,8 @@ class Ensemble:
         atom_group = self.universe.select_atoms(selection)
         run_per_frame = partial(bonds_per_frame,
                         atomgroup = atom_group, 
-                        atom1_type=atom1_type, 
-                        atom2_type=atom2_type)
+                        atom1_name = atom1_name, 
+                        atom2_name = atom2_name)
         
         if n_threads:
             self.available_threads = self.get_available_threads()
@@ -207,7 +207,7 @@ class Ensemble:
         bonds = np.asarray(result)
         return bonds
     
-    def get_angles(self, selection, atom1_type, atom2_type, atom3_type, n_threads=None):
+    def get_angles(self, selection, atom1_name, atom2_name, atom3_name, n_threads=None):
         """
         selection: MDAnalysis selection syntax; example "protein and resid 10"
         atom1_type: atom type of the first atom;
@@ -219,9 +219,9 @@ class Ensemble:
         atom_group = self.universe.select_atoms(selection)
         run_per_frame = partial(angles_per_frame,
                         atomgroup=atom_group,
-                        atom1_type=atom1_type, 
-                        atom2_type=atom2_type,
-                        atom3_type=atom3_type)
+                        atom1_name = atom1_name, 
+                        atom2_name = atom2_name,
+                        atom3_name = atom3_name)
         
         if n_threads:
             self.available_threads = self.get_available_threads()
