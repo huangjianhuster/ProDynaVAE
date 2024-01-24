@@ -159,6 +159,9 @@ class Ensemble:
         
     # covalent geometry
     def load_top(self, top_file):
+        """
+        For gromacs topol.top file
+        """
         self.top = pmd.load_file(top_file)
         self.bond_types = self.top.parameterset.bond_types
         self.angle_types = self.top.parameterset.angle_types

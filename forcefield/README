@@ -1,0 +1,3 @@
+# forcefile topology and params
+CHARMM36M top:
+    top_all22_prot.rtf
