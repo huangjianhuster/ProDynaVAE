@@ -9,7 +9,7 @@
 
 # Dependencies
 import MDAnalysis as mda
-from MDAnalysis.analysis.dihedrals import Dihedral
+from MDAnalysis.analysis.dihedrals import Dihedral, Ramachandran
 import warnings
 import numpy as np
 import matplotlib.pyplot as plt
@@ -50,7 +50,7 @@ class Ensemble:
         return [res.resid for res in self.universe.residues]
     
     def get_sequence(self):
-        return "".join([three2one[res.resname] for res in self.universe.residues])
+        return "".join([three2one[res.resname] for res in self.universe.residues if res.resname in three2one.keys()])
 
     def filter_atoms(self, atom_selection):
         """Filter atoms based on a selection string."""
