@@ -168,18 +168,47 @@ class Ensemble:
         return None
     
     def get_bond_eq(self, atom1_type, atom2_type):
+        """
+        get the equilirium bond length from the given topology
+        atom1_type: atom type of the first atom 
+        atom2_type: atom type of the second atom
+            of note, the order of those two arguments are not important
+        """
         r_eq = self.bond_types[(atom1_type, atom2_type)]
         return r_eq
 
     def get_angle_eq(self, atom1_type, atom2_type, atom3_type):
+        """
+        get the equilirium angle from the given topology
+        atom1_type: atom type of the first atom 
+        atom2_type: atom type of the second atom
+        atom3_type: atom type of the third atom
+            of note, the order of the first and the third atoms are not important
+        """
         r_eq = self.angle_types[(atom1_type, atom2_type, atom3_type)]
         return r_eq
 
     def get_dihedral_eq(self, atom1_type, atom2_type, atom3_type, atom4_type):
+        """
+        get the equilirium dihedral angle from the given topology
+        atom1_type: atom type of the first atom 
+        atom2_type: atom type of the second atom
+        atom3_type: atom type of the third atom
+        atom4_type: atom type of the fourth atom
+            of note, the order could be either:
+                atom1, atom2, atom3, atom4 OR atom4, atom3, atom2, atom1
+        """
         r_eq = self.dihedral_types[(atom1_type, atom2_type, atom3_type, atom4_type)]
         return r_eq
     
     def get_improper_eq(self, atom1_type, atom2_type, atom3_type, atom4_type):
+        """
+        get the equilirium improper angle from the given topology
+        atom1_type: atom type of the first atom 
+        atom2_type: atom type of the second atom
+        atom3_type: atom type of the third atom
+        atom4_type: atom type of the fourth atom
+        """
         r_eq = self.improper_types[(atom1_type, atom2_type, atom3_type, atom4_type)]
         return r_eq
         
