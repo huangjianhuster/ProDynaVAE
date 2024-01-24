@@ -215,8 +215,8 @@ class Ensemble:
     def get_bond(self, selection, atom1_name, atom2_name, n_threads=None):
         """
         selection: MDAnalysis selection syntax; example "protein and resid 10"
-        atom1_type: atomname of the first atom;
-        atom2_type: atomname of the second atom;
+        atom1_name: atomname of the first atom;
+        atom2_name: atomname of the second atom;
         n_threads: number of CPU threads;
         return: bond length array # unit: Angstrom
         """
@@ -239,9 +239,9 @@ class Ensemble:
     def get_angle(self, selection, atom1_name, atom2_name, atom3_name, n_threads=None):
         """
         selection: MDAnalysis selection syntax; example "protein and resid 10"
-        atom1_type: atom type of the first atom;
-        atom2_type: atom type of the second atom;
-        atom3_type: atom type of the third atom;
+        atom1_name: atom name of the first atom;
+        atom2_name: atom name of the second atom;
+        atom3_name: atom name of the third atom;
         n_threads: number of CPU threads;
         return: angle array # unit: degree
         """
@@ -266,10 +266,10 @@ class Ensemble:
         """
         get a certain dihedral type (may includes many dihedrals from different residues) from the whole protein
 
-        atom1_type: atomname of the first atom;
-        atom2_type: atomname of the second atom;
-        atom3_type: atomname of the third atom;
-        atom4_type: atomname of the fourth atom;
+        atom1_name: atom name of the first atom;
+        atom2_name: atom name of the second atom;
+        atom3_name: atom name of the third atom;
+        atom4_name: atom name of the fourth atom;
         n_threads: number of CPU threads;
         return: dihedral array # unit: degree
         """
