@@ -151,11 +151,8 @@ class Ensemble:
         # ref: https://userguide.mdanalysis.org/stable/examples/analysis/reduced_dimensions/pca.html
         (using "selection" as the alignment and also output only the "selection" atoms)
         """
-        pc = pca.PCA(self.universe, select=selection, align=True, mean=None, n_components=None).run()
-        if n_components:
-            return pc.results
-        else:
-            return pc.transform(self.universe.select_atoms(selection), n_components=n_components)
+        pc = pca.PCA(self.universe, select=selection, align=True, mean=None, n_components=n_components).run()
+        return pc
         
     # covalent geometry
     def load_top(self, top_file):
