@@ -1,6 +1,7 @@
 import sys
 sys.path.append("../../ProDynaVAE")
 from utils.ensemble import *
+from scipy.stats import gaussian_kde
 
 # TODO: an exmple of using utils.ensemble module
 
@@ -88,6 +89,30 @@ def compare_angle(ensemble1, ensemble2, resid, atom1_name, atom2_name, atom3_nam
 
     return (angle_ensem1, angle_ensem2), fig, ax
 
+def compare_pca(ensemble1, ensemble2, selection="protein and backbone", n_components=2):
+    """
+    compare pca projected on the first and the second principle components
+    """
+    pca_ensem1 = ensemble1.pca(selection=selection, n_components=n_components)
+    pca_ensem1_data = pca_ensem1.p_components.reshape(n_components, -1)
+    pca_ensem2 = ensemble2.pca(selection=selection, n_components=n_components)
+    pca_ensem2_data = pca_ensem2.p_components.reshape(n_components, -1)
+
+    fig, axs = plt.subplots(1, 2, figsize=(8, 6))
+    z_ensemble1 = gaussian_kde(pca_ensem1_data)(pca_ensem1_data)
+    z_ensemble2 = gaussian_kde(pca_ensem2_data)(pca_ensem2_data)
+    axs[0].scatter(pca_ensem1_data[0, :], pca_ensem1_data[1, :], c=z_ensemble1, s=10, label="ensemble1")
+    axs[1].scatter(pca_ensem2_data[0, :], pca_ensem2_data[1, :], c=z_ensemble2, s=10, label="ensemble2")
+    for ax in axs:
+        ax.set_xlabel("PC1")
+        ax.set_ylabel("PC2")
+        ax.grid()
+        ax.legend(loc="upper left", frameon=False)
+    plt.show()
+
+
+
+
 if __name__ == "__main__":
     # MD ensemble
     proG_training_xtc = "/home2/jianhuang/projects/VAE/dataset/protein_G/100ns_pro_align_alphahelix.xtc"
@@ -142,3 +167,8 @@ if __name__ == "__main__":
     ram_ensem2 = proG_decoder_ensemble.universe.select_atoms("protein")
     ram_ensem2_R = Ramachandran(ram_ensem2).run()
     ram_ensem2_R.plot()
+
+    # plot PCA (only using two components)
+    pca_ensem1 = proG_training_ensemble.pca(selection="protein and backbone", n_components=None)
+    pca_ensem2 = proG_decoder_ensemble.pca(selection="protein and backbone", n_components=None)
+
